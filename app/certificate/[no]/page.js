@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import QRCode from 'qrcode';
+import bwipjs from 'bwip-js';
 import { notFound } from 'next/navigation';
-import { get } from '../../../lib/db';
+import { get, getSettings } from '../../../lib/db';
 import { bn, bodyFor } from '../../../lib/templates';
 import PrintButton from './PrintButton';
 export const dynamic = 'force-dynamic';
@@ -11,8 +12,9 @@ const dmy = (iso) => bn(new Date(iso).toLocaleDateString('en-GB', { timeZone: 'A
 export default async function Certificate({ params, searchParams }) {
   const r = await get(params.no);
   if (!r || r.status !== 'approved' || r.mobile !== searchParams.mobile) notFound();
-  const site = process.env.SITE_URL || 'http://localhost:3000', e = process.env, x = r.extra;
+  const site = process.env.SITE_URL || 'http://localhost:3000', e = process.env, x = r.extra, st = await getSettings();
   const qr = await QRCode.toDataURL(`${site}/verify?no=${r.no}`, { margin: 1, width: 240 });
+  const bc = 'data:image/png;base64,' + (await bwipjs.toBuffer({ bcid: 'code128', text: r.no, scale: 3, height: 9, includetext: false })).toString('base64');
   return (
     <>
       <div className="no-print" style={{ textAlign: 'center' }}><PrintButton /></div>
@@ -21,14 +23,14 @@ export default async function Certificate({ params, searchParams }) {
         <div className="cert-in">
           <img className="wm" src="/emblem.svg" alt="" aria-hidden="true" />
           <div className="ct-top">
-            <div className="qrb"><img src={qr} alt="যাচাইয়ের QR কোড" width="92" height="92" /><div>যাচাই করুন</div></div>
+            <div className="qrb"><div style={{ width: 92, textAlign: 'center' }}><img src={qr} alt="যাচাইয়ের QR কোড" width="92" height="92" /><div>যাচাই করুন</div></div></div>
             <div className="ct-head">
               <img src="/emblem.svg" alt="গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের প্রতীক" width="88" height="88" />
               <div style={{ fontWeight: 600 }}>গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</div>
-              <div className="un">{e.UNION_NAME || '[ইউনিয়ন পরিষদের নাম]'}</div>
-              <div>উপজেলা: {e.UPAZILA || '[উপজেলা]'}, জেলা: {e.DISTRICT || '[জেলা]'}</div>
+              <div className="un">{st.union_name || e.UNION_NAME || '[ইউনিয়ন পরিষদের নাম]'}</div>
+              <div>উপজেলা: {st.upazila || e.UPAZILA || '[উপজেলা]'}, জেলা: {st.district || e.DISTRICT || '[জেলা]'}</div>
             </div>
-            <div style={{ width: 92 }} />
+            <div className="qrb" style={{ textAlign: 'right' }}><img src={bc} alt="সনদ নম্বরের বারকোড" width="130" height="46" /></div>
           </div>
           <div className="ct-line" />
           <div className="ct-no">
@@ -49,12 +51,13 @@ export default async function Certificate({ params, searchParams }) {
           </div>
           <div style={{ flex: 1 }} />
           <div className="ct-sign">
-            <div style={{ width: 130 }}>{has('seal.png') ? <img src="/seal.png" alt="ইউনিয়ন পরিষদের সীল" width="120" /> : <span className="no-print" style={{ fontSize: 12, color: 'var(--mut)' }}>[public/seal.png দিন]</span>}</div>
+            <div style={{ textAlign: 'center', minWidth: 200 }}>
+              <div style={{ height: 80 }}>{has('seal.png') && <img src="/seal.png" alt="ইউনিয়ন পরিষদের সীল" height="80" />}</div>
+              <div style={{ borderTop: '1px solid #14231B', paddingTop: 4, fontSize: 14 }}>সীল</div>
+            </div>
             <div style={{ textAlign: 'center', minWidth: 250 }}>
-              <div style={{ height: 70 }}>{has('signature.png') && <img src="/signature.png" alt="স্বাক্ষর" height="70" />}</div>
-              <div style={{ borderTop: '1px solid #14231B', paddingTop: 4, fontSize: 13 }}>অনুমোদনকারীর সীল ও স্বাক্ষর</div>
-              <div style={{ fontWeight: 700 }}>{e.CHAIRMAN_NAME || '[চেয়ারম্যানের নাম]'}</div>
-              <div>চেয়ারম্যান</div><div>{e.UNION_NAME || '[ইউনিয়ন পরিষদের নাম]'}</div>
+              <div style={{ height: 80 }}>{has('signature.png') && <img src="/signature.png" alt="স্বাক্ষর" height="70" />}</div>
+              <div style={{ borderTop: '1px solid #14231B', paddingTop: 4, fontSize: 14 }}>অনুমোদনকারীর সীল ও স্বাক্ষর</div>
             </div>
           </div>
           <div className="ct-foot">সনদটি যাচাই করতে QR Code স্ক্যান করুন অথবা ওয়েবসাইট ভিজিট করুন: {site.replace(/^https?:\/\//, '')}/verify</div>

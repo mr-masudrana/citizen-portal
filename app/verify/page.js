@@ -1,8 +1,9 @@
-import { get } from '../../lib/db';
+import { get, getSettings } from '../../lib/db';
 export const dynamic = 'force-dynamic';
 export default async function Verify({ searchParams }) {
   const no = String(searchParams.no || '').trim();
   const r = no ? await get(no) : null;
+  const st = no ? await getSettings() : {};
   const ok = r && r.status === 'approved';
   return (
     <div className="page">
@@ -19,7 +20,7 @@ export default async function Verify({ searchParams }) {
           <div className="kv"><span>সনদ নম্বর</span><b>{r.no}</b></div>
           <div className="kv"><span>নাম</span><b>{r.name}</b></div>
           <div className="kv"><span>ইস্যুর তারিখ</span><b>{new Date(r.decidedAt).toLocaleDateString('bn-BD')}</b></div>
-          <div className="kv"><span>ইস্যুকারী</span><b>{process.env.UNION_NAME || 'ইউনিয়ন পরিষদ'}</b></div>
+          <div className="kv"><span>ইস্যুকারী</span><b>{st.union_name || process.env.UNION_NAME || 'ইউনিয়ন পরিষদ'}</b></div>
         </div>
       )}
       {no && !ok && (

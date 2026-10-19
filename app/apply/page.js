@@ -15,7 +15,7 @@ async function submit(fd) {
   if (badFile(files)) redirect('/apply?error=file');
   const no = 'S' + randomBytes(4).toString('hex').toUpperCase();
   const paths = await uploadDocs(no, files);
-  await add({ no, service, citizen_id: u.id, name: u.name, father: u.father, mother: u.mother, dob: u.dob, nid: u.nid, mobile: u.mobile, village: u.village, ward: u.ward, post: u.post, status: 'pending', createdAt: new Date().toISOString(), files: paths });
+  await add({ no, service, citizen_id: u.id, name: u.name, father: u.father, mother: u.mother, dob: u.dob, nid: u.nid, mobile: u.mobile, village: u.village, ward: u.ward, post: u.post, district: u.district, upazila: u.upazila, union_name: u.union_name, status: 'pending', createdAt: new Date().toISOString(), files: paths });
   redirect(`/track?no=${no}&mobile=${u.mobile}`);
 }
 
