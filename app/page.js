@@ -7,7 +7,7 @@ export default function Home() {
         <div>
           <h1>নাগরিক সেবা হবে আরও সহজ, দ্রুত ও নির্ভুল</h1>
           <p>নাগরিকত্ব, চারিত্রিক, ওয়ারিশ ও ট্রেড লাইসেন্সসহ নানা সনদ এখন অনলাইনে। প্রতিটি সনদে QR কোড, তাই সত্যতা যাচাই মুহূর্তেই।</p>
-          <a className="btn light" href="#services">সেবাসমূহ দেখুন</a>
+          <a className="btn light" href="#services">সেবাসমূহ দেখুন</a> <a className="btn out" href="/register">নাগরিক নিবন্ধন</a>
         </div>
         <form className="card" action="/verify">
           <h2>ডিজিটাল সনদ যাচাই করুন</h2>

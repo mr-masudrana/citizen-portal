@@ -18,3 +18,10 @@
 - Vercel-এ ডিপ্লয় করলে একই env মানগুলো Project Settings > Environment Variables-এ দিন। Vercel-এ রিকোয়েস্টের সীমা ৪.৫ MB।
 - সনদের ভাষা সাধারণ। আপনার ইউনিয়ন পরিষদের অনুমোদিত ফরম্যাট বসাতে হবে।
 - এখনো নেই: পেমেন্ট, ইউনিয়ন নিবন্ধন, SMS, পূর্ণ লগইন সিস্টেম।
+
+## নাগরিক লগইন ও প্রোফাইল
+- Supabase SQL Editor-এ `supabase/auth.sql` একবার Run করুন (`citizens` টেবিল ও `applications.citizen_id`)।
+- `.env.local`-এ `SESSION_SECRET` দিন। তৈরির কমান্ড: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+- `/register` নিবন্ধন, `/login` লগইন, `/profile` প্রোফাইল, `/dashboard` আমার আবেদন।
+- প্রোফাইল ১০০% (নাম, মোবাইল, পিতা, মাতা, জন্ম তারিখ, NID, গ্রাম, ওয়ার্ড, ডাকঘর, ছবি) না হলে `/apply` ও `/warish` খুলবে না।
+- পাসওয়ার্ড scrypt দিয়ে হ্যাশ করা থাকে। এখনো নেই: মোবাইল OTP যাচাই, পাসওয়ার্ড ভুলে গেলে রিসেট, লগইনে ভুল চেষ্টার সীমা।
