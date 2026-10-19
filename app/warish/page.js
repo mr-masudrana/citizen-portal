@@ -1,30 +1,25 @@
 import { redirect } from 'next/navigation';
 import { randomBytes } from 'crypto';
-import { add, uploadDocs, deleteDocs, badFile } from '../../lib/db';
-import { requireCitizen, percent } from '../../lib/auth';
+import { add, uploadDocs, badFile } from '../../lib/db';
+import { requireCitizen, ready } from '../../lib/auth';
 import HeirList from './HeirList';
+import { HEIR } from '../../lib/services';
 
 async function submit(fd) {
   'use server';
   const u = await requireCitizen('/warish');
-  if (percent(u) < 100) redirect('/profile?need=1');
+  if (!ready(u)) redirect('/profile?need=1');
   const g = (k) => String(fd.get(k) || '').trim();
+  const service = HEIR.includes(g('service')) ? g('service') : HEIR[0];
   const names = fd.getAll('h_name'), rels = fd.getAll('h_rel'), nids = fd.getAll('h_nid');
-  const heirs = names.slice(0, 20).map((n, i) => ({ name: String(n).trim().slice(0, 120), rel: String(rels[i] || '').trim().slice(0, 60), nid: String(nids[i] || '').trim().slice(0, 17) })).filter((h) => h.name);
-  const date = g('ddeath');
-  const validDate = !date || (/^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(new Date(`${date}T00:00:00Z`).getTime()) && new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) === date && new Date(`${date}T00:00:00Z`) <= new Date());
+  const heirs = names.map((n, i) => ({ name: String(n).trim(), rel: String(rels[i] || ''), nid: String(nids[i] || '').trim() })).filter((h) => h.name);
   const files = fd.getAll('docs').filter((f) => f.size > 0);
-  if (!g('dname') || g('dname').length > 120 || g('dfather').length > 120 || g('dcert').length > 60 || g('daddr').length > 250 || !heirs.length || names.length > 20 || heirs.some((h) => h.nid && !/^\d{10,17}$/.test(h.nid)) || !validDate) redirect('/warish?error=1');
+  if (!g('dname') || !heirs.length) redirect('/warish?error=1');
   if (badFile(files)) redirect('/warish?error=file');
   const no = 'S' + randomBytes(4).toString('hex').toUpperCase();
   const paths = await uploadDocs(no, files);
-  try {
-    await add({ no, service: 'ওয়ারিশ সনদ', citizen_id: u.id, name: u.name, father: u.father, mother: u.mother, dob: u.dob, nid: u.nid, mobile: u.mobile, village: u.village, ward: u.ward, post: u.post, district: u.district, upazila: u.upazila, union_name: u.union_name, status: 'pending', createdAt: new Date().toISOString(), files: paths,
+  await add({ no, service, citizen_id: u.id, name: u.name, father: u.father, mother: u.mother, dob: u.dob, nid: u.nid, mobile: u.mobile, village: u.village, ward: u.ward, post: u.post, division: u.division, district: u.district, upazila: u.upazila, union_name: u.union_name, status: 'pending', createdAt: new Date().toISOString(), files: paths,
     extra: { dname: g('dname'), dfather: g('dfather'), ddeath: g('ddeath'), dcert: g('dcert'), daddr: g('daddr'), heirs } });
-  } catch (error) {
-    try { await deleteDocs(paths); } catch { /* log through deployment platform if cleanup also fails */ }
-    throw error;
-  }
   redirect(`/track?no=${no}&mobile=${u.mobile}`);
 }
 
@@ -34,15 +29,17 @@ const Field = ({ l, n, ph, req = true, type = 'text' }) => (
 const H = ({ children }) => <h2 style={{ margin: '28px 0 6px', fontSize: 20, paddingBottom: 8, borderBottom: '1px solid var(--bd)' }}>{children}</h2>;
 
 export default async function Warish({ searchParams }) {
-  const u = await requireCitizen('/warish');
-  if (percent(u) < 100) redirect('/profile?need=1');
+  const service = HEIR.includes(searchParams.service) ? searchParams.service : HEIR[0];
+  const u = await requireCitizen('/warish?service=' + encodeURIComponent(service));
+  if (!ready(u)) redirect('/profile?need=1');
   return (
     <div className="page">
-      <h1>ওয়ারিশ সনদের আবেদন</h1>
+      <h1>{service}ের আবেদন</h1>
       <p className="sub">আবেদনকারী: {u.name} ({u.mobile})। মৃত ব্যক্তির তথ্য ও সকল ওয়ারিশের বিবরণ দিন।</p>
       {searchParams.error === 'file' && <p className="badge bad">ফাইল সর্বোচ্চ ৩টি, প্রতিটি ১ MB-এর মধ্যে এবং JPG, PNG বা PDF হতে হবে।</p>}
       {searchParams.error === '1' && <p className="badge bad">মৃত ব্যক্তির নাম এবং অন্তত একজন ওয়ারিশের নাম দিন।</p>}
       <form className="card" action={submit}>
+        <input type="hidden" name="service" value={service} />
         <H>মৃত ব্যক্তির তথ্য</H>
         <div className="row"><Field l="নাম" n="dname" ph="মৃত ব্যক্তির নাম" /><Field l="পিতার নাম" n="dfather" ph="পিতার নাম" req={false} /><Field l="মৃত্যুর তারিখ" n="ddeath" type="date" req={false} /><Field l="মৃত্যু সনদ নম্বর" n="dcert" ph="নম্বর" req={false} /><Field l="স্থায়ী ঠিকানা" n="daddr" ph="গ্রাম, ওয়ার্ড, ডাকঘর" req={false} /></div>
         <H>ওয়ারিশদের তালিকা</H>
