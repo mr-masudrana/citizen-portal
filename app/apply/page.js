@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { randomBytes } from 'crypto';
-import { add, uploadDocs, badFile } from '../../lib/db';
+import { add, uploadDocs, deleteDocs, badFile } from '../../lib/db';
 import { requireCitizen, percent } from '../../lib/auth';
 import { SERVICES } from '../../lib/services';
 const LIST = SERVICES.filter((s) => s !== 'ওয়ারিশ সনদ'); // ওয়ারিশ সনদের আলাদা ফরম: /warish
@@ -15,7 +15,12 @@ async function submit(fd) {
   if (badFile(files)) redirect('/apply?error=file');
   const no = 'S' + randomBytes(4).toString('hex').toUpperCase();
   const paths = await uploadDocs(no, files);
-  await add({ no, service, citizen_id: u.id, name: u.name, father: u.father, mother: u.mother, dob: u.dob, nid: u.nid, mobile: u.mobile, village: u.village, ward: u.ward, post: u.post, district: u.district, upazila: u.upazila, union_name: u.union_name, status: 'pending', createdAt: new Date().toISOString(), files: paths });
+  try {
+    await add({ no, service, citizen_id: u.id, name: u.name, father: u.father, mother: u.mother, dob: u.dob, nid: u.nid, mobile: u.mobile, village: u.village, ward: u.ward, post: u.post, district: u.district, upazila: u.upazila, union_name: u.union_name, status: 'pending', createdAt: new Date().toISOString(), files: paths });
+  } catch (error) {
+    try { await deleteDocs(paths); } catch { /* log through deployment platform if cleanup also fails */ }
+    throw error;
+  }
   redirect(`/track?no=${no}&mobile=${u.mobile}`);
 }
 

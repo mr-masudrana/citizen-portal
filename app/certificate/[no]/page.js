@@ -3,23 +3,27 @@ import path from 'path';
 import QRCode from 'qrcode';
 import bwipjs from 'bwip-js';
 import { notFound } from 'next/navigation';
-import { get, getSettings } from '../../../lib/db';
+import { get, getSettings, getActiveCertificateForApplication } from '../../../lib/db';
+import { currentCitizen } from '../../../lib/auth';
 import { bn, bodyFor } from '../../../lib/templates';
 import PrintButton from './PrintButton';
 export const dynamic = 'force-dynamic';
 const has = (f) => fs.existsSync(path.join(process.cwd(), 'public', f));
 const dmy = (iso) => bn(new Date(iso).toLocaleDateString('en-GB', { timeZone: 'Asia/Dhaka' }).replaceAll('/', '-'));
-export default async function Certificate({ params, searchParams }) {
+export default async function Certificate({ params }) {
+  const user = await currentCitizen();
   const r = await get(params.no);
-  if (!r || r.status !== 'approved' || r.mobile !== searchParams.mobile) notFound();
+  if (!user || !r || r.status !== 'approved' || r.citizen_id !== user.id) notFound();
+  const cert = await getActiveCertificateForApplication(r.no);
+  if (!cert) notFound();
   const site = process.env.SITE_URL || 'http://localhost:3000', e = process.env, x = r.extra, st = await getSettings();
-  const qr = await QRCode.toDataURL(`${site}/verify?no=${r.no}`, { margin: 1, width: 240 });
+  const qr = await QRCode.toDataURL(`${site}/verify?no=${cert.certificate_no}`, { margin: 1, width: 240 });
   const bc = 'data:image/png;base64,' + (await bwipjs.toBuffer({ bcid: 'code128', text: r.no, scale: 3, height: 9, includetext: false })).toString('base64');
   return (
     <>
-      <div className="no-print" style={{ textAlign: 'center' }}><PrintButton /></div>
+      <div className="no-print" style={{ textAlign: 'center' }}><PrintButton applicationNo={r.no} /></div>
       <div className="cert">
-        <div className="ct-ref">সনদ - {r.no}</div>
+        <div className="ct-ref">সনদ - {cert.certificate_no}</div>
         <div className="cert-in">
           <img className="wm" src="/emblem.svg" alt="" aria-hidden="true" />
           <div className="ct-top">
@@ -34,8 +38,8 @@ export default async function Certificate({ params, searchParams }) {
           </div>
           <div className="ct-line" />
           <div className="ct-no">
-            <div>সনদ নং: {[...r.no].map((c, i) => <span key={i} className="bx">{bn(c)}</span>)}</div>
-            <div>ইস্যুর তারিখ: {dmy(r.decidedAt)}</div>
+            <div>সনদ নং: {[...cert.certificate_no].map((c, i) => <span key={i} className="bx">{bn(c)}</span>)}</div>
+            <div>ইস্যুর তারিখ: {dmy(cert.issued_at)}</div>
           </div>
           <div className="ct-title"><span>{r.service}</span></div>
           <div className="ct-body">

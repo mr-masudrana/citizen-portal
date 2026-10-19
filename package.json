@@ -4,7 +4,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "node --test tests/*.test.mjs",
+    "check:production": "node --test tests/*.test.mjs",
+    "test:email": "node scripts/test-email.mjs",
+    "check:env": "node scripts/check-env.mjs",
+    "smoke:production": "node scripts/smoke-production.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.45.4",
@@ -12,6 +17,7 @@
     "next": "14.2.15",
     "qrcode": "1.5.4",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "@react-pdf/renderer": "^4.3.0"
   }
 }

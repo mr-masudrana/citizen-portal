@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { randomBytes } from 'crypto';
-import { add, uploadDocs, badFile } from '../../lib/db';
+import { add, uploadDocs, deleteDocs, badFile } from '../../lib/db';
 import { requireCitizen, percent } from '../../lib/auth';
 import HeirList from './HeirList';
 
@@ -10,14 +10,21 @@ async function submit(fd) {
   if (percent(u) < 100) redirect('/profile?need=1');
   const g = (k) => String(fd.get(k) || '').trim();
   const names = fd.getAll('h_name'), rels = fd.getAll('h_rel'), nids = fd.getAll('h_nid');
-  const heirs = names.map((n, i) => ({ name: String(n).trim(), rel: String(rels[i] || ''), nid: String(nids[i] || '').trim() })).filter((h) => h.name);
+  const heirs = names.slice(0, 20).map((n, i) => ({ name: String(n).trim().slice(0, 120), rel: String(rels[i] || '').trim().slice(0, 60), nid: String(nids[i] || '').trim().slice(0, 17) })).filter((h) => h.name);
+  const date = g('ddeath');
+  const validDate = !date || (/^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(new Date(`${date}T00:00:00Z`).getTime()) && new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) === date && new Date(`${date}T00:00:00Z`) <= new Date());
   const files = fd.getAll('docs').filter((f) => f.size > 0);
-  if (!g('dname') || !heirs.length) redirect('/warish?error=1');
+  if (!g('dname') || g('dname').length > 120 || g('dfather').length > 120 || g('dcert').length > 60 || g('daddr').length > 250 || !heirs.length || names.length > 20 || heirs.some((h) => h.nid && !/^\d{10,17}$/.test(h.nid)) || !validDate) redirect('/warish?error=1');
   if (badFile(files)) redirect('/warish?error=file');
   const no = 'S' + randomBytes(4).toString('hex').toUpperCase();
   const paths = await uploadDocs(no, files);
-  await add({ no, service: 'ওয়ারিশ সনদ', citizen_id: u.id, name: u.name, father: u.father, mother: u.mother, dob: u.dob, nid: u.nid, mobile: u.mobile, village: u.village, ward: u.ward, post: u.post, district: u.district, upazila: u.upazila, union_name: u.union_name, status: 'pending', createdAt: new Date().toISOString(), files: paths,
+  try {
+    await add({ no, service: 'ওয়ারিশ সনদ', citizen_id: u.id, name: u.name, father: u.father, mother: u.mother, dob: u.dob, nid: u.nid, mobile: u.mobile, village: u.village, ward: u.ward, post: u.post, district: u.district, upazila: u.upazila, union_name: u.union_name, status: 'pending', createdAt: new Date().toISOString(), files: paths,
     extra: { dname: g('dname'), dfather: g('dfather'), ddeath: g('ddeath'), dcert: g('dcert'), daddr: g('daddr'), heirs } });
+  } catch (error) {
+    try { await deleteDocs(paths); } catch { /* log through deployment platform if cleanup also fails */ }
+    throw error;
+  }
   redirect(`/track?no=${no}&mobile=${u.mobile}`);
 }
 

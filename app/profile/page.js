@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireCitizen, percent, FIELDS } from '../../lib/auth';
-import { patchCitizen, uploadPhoto, docUrls } from '../../lib/db';
+import { patchCitizen, uploadPhoto, deleteDocs, docUrls } from '../../lib/db';
 import { bn } from '../../lib/templates';
 import PhotoPick from './PhotoPick';
 
@@ -10,13 +10,19 @@ async function save(fd) {
   const u = await requireCitizen('/profile');
   const g = (k) => String(fd.get(k) || '').trim().slice(0, 120);
   const p = { name: g('name'), father: g('father'), mother: g('mother'), dob: g('dob'), nid: g('nid'), district: g('district'), upazila: g('upazila'), union_name: g('union_name'), village: g('village'), ward: g('ward'), post: g('post') };
-  if (!p.name || (p.nid && !/^\d{10,17}$/.test(p.nid)) || (p.dob && !(/^\d{4}-\d{2}-\d{2}$/.test(p.dob) && new Date(p.dob) <= new Date()))) redirect('/profile?error=1');
+  const validDob = !p.dob || (/^\d{4}-\d{2}-\d{2}$/.test(p.dob) && Number.isFinite(new Date(`${p.dob}T00:00:00Z`).getTime()) && new Date(`${p.dob}T00:00:00Z`).toISOString().slice(0, 10) === p.dob && new Date(`${p.dob}T00:00:00Z`) <= new Date());
+  if (!p.name || p.name.length > 120 || (p.nid && !/^\d{10,17}$/.test(p.nid)) || !validDob) redirect('/profile?error=1');
   const f = fd.get('photo');
   if (f && f.size > 0) {
     if (!['image/jpeg', 'image/png'].includes(f.type) || f.size > 1048576) redirect('/profile?error=photo');
     p.photo = await uploadPhoto(u.id, f);
   }
-  await patchCitizen(u.id, p);
+  try {
+    await patchCitizen(u.id, p);
+  } catch (error) {
+    if (p.photo && p.photo !== u.photo) { try { await deleteDocs([p.photo]); } catch { /* keep original database error */ } }
+    throw error;
+  }
   revalidatePath('/profile');
   redirect('/profile?saved=1');
 }
