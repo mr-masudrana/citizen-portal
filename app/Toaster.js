@@ -25,7 +25,7 @@ export default function Toaster() {
     const h = setTimeout(() => {
       document.querySelectorAll('button.loading').forEach((b) => b.classList.remove('loading'));
       const found = [];
-      document.querySelectorAll('.page > p.badge:not([data-t])').forEach((el) => {
+      document.querySelectorAll('.page > p.badge:not([data-t]), .adm-main > p.badge:not([data-t])').forEach((el) => {
         el.setAttribute('data-t', '1');
         const type = el.classList.contains('ok') ? 'ok' : el.classList.contains('bad') ? 'bad' : 'warn';
         found.push({ id: ++seq, type, text: el.textContent });

@@ -26,6 +26,7 @@ export default async function Track({ searchParams }) {
           <div className="kv"><span>আবেদন নম্বর</span><b>{r.no}</b></div>
           <div className="kv"><span>আবেদনের তারিখ</span><b>{new Date(r.createdAt).toLocaleDateString('bn-BD')}</b></div>
           {own && <div className="kv"><span>আবেদনকারী</span><b>{r.name}</b></div>}
+          {own && r.status === 'rejected' && r.admin_note && <p className="sub" style={{ margin: '14px 0 0' }}><b>বাতিলের কারণ:</b> {r.admin_note}</p>}
           {own && r.status === 'approved' && <a className="btn" href={`/certificate/${r.no}`}>সনদ দেখুন ও প্রিন্ট করুন</a>}
           {!own && r.status === 'approved' && <p className="sub" style={{ margin: '14px 0 0' }}>সনদ দেখতে আবেদনকারীর অ্যাকাউন্টে <a href={`/login?next=${encodeURIComponent('/track?no=' + r.no)}`}>লগইন করুন</a>।</p>}
         </div>

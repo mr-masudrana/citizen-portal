@@ -7,6 +7,7 @@ import { get, getSettings } from '../../../lib/db';
 import { bn, bodyFor, familyIntro } from '../../../lib/templates';
 import PrintButton from './PrintButton';
 import { currentCitizen } from '../../../lib/auth';
+import { isAdmin } from '../../../lib/admin';
 export const dynamic = 'force-dynamic';
 const has = (f) => fs.existsSync(path.join(process.cwd(), 'public', f));
 const dmy = (iso) => bn(new Date(iso).toLocaleDateString('en-GB', { timeZone: 'Asia/Dhaka' }).replaceAll('/', '-'));
@@ -19,7 +20,7 @@ const Tbl = ({ rows }) => (
 export default async function Certificate({ params, searchParams }) {
   const r = await get(params.no);
   const me = r ? await currentCitizen() : null;
-  if (!r || r.status !== 'approved' || !me || me.id !== r.citizen_id) notFound();
+  if (!r || r.status !== 'approved' || (!isAdmin() && (!me || me.id !== r.citizen_id))) notFound();
   const site = process.env.SITE_URL || 'http://localhost:3000', e = process.env, x = r.extra, st = await getSettings();
   const qr = await QRCode.toDataURL(`${site}/verify?no=${r.no}`, { margin: 1, width: 240 });
   const bc = 'data:image/png;base64,' + (await bwipjs.toBuffer({ bcid: 'code128', text: r.no, scale: 3, height: 9, includetext: false })).toString('base64');

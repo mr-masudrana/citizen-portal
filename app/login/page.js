@@ -7,6 +7,7 @@ async function login(fd) {
   const next = String(fd.get('next') || ''), email = String(fd.get('email') || '').trim().toLowerCase();
   const u = email ? await getByEmail(email) : null;
   if (!u || !verify(String(fd.get('password') || ''), u.pass_hash)) redirect('/login?error=1&next=' + encodeURIComponent(next));
+  if (u.blocked) redirect('/login?error=blocked');
   startSession(u);
   redirect(safe(next));
 }
@@ -17,7 +18,8 @@ export default async function Login({ searchParams }) {
       <h1>লগইন</h1>
       <p className="sub">ইমেইল ও পাসওয়ার্ড দিয়ে প্রবেশ করুন।</p>
       {searchParams.reset && <p className="badge ok">পাসওয়ার্ড বদলানো হয়েছে। নতুন পাসওয়ার্ড দিয়ে লগইন করুন।</p>}
-      {searchParams.error && <p className="badge bad">ইমেইল বা পাসওয়ার্ড ঠিক নেই। নিবন্ধনের কোড যাচাই না করে থাকলে নিচের লিংক থেকে নতুন কোড নিন।</p>}
+      {searchParams.error === 'blocked' && <p className="badge bad">আপনার অ্যাকাউন্টটি বন্ধ আছে। বিস্তারিত জানতে ইউনিয়ন পরিষদের সঙ্গে যোগাযোগ করুন।</p>}
+      {searchParams.error === '1' && <p className="badge bad">ইমেইল বা পাসওয়ার্ড ঠিক নেই। নিবন্ধনের কোড যাচাই না করে থাকলে নিচের লিংক থেকে নতুন কোড নিন।</p>}
       <form className="card" action={login}>
         <input type="hidden" name="next" value={searchParams.next || ''} />
         <label htmlFor="email">ইমেইল ঠিকানা</label><input id="email" name="email" type="email" autoComplete="email" required />
