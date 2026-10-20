@@ -1,33 +1,34 @@
 import { redirect } from 'next/navigation';
-import { addCitizen, getByMobile, getByEmail } from '../../lib/db';
-import { hash, startSession, currentCitizen } from '../../lib/auth';
-import { sendVerifyMail } from '../../lib/mailers';
+import { getByEmail } from '../../lib/db';
+import { currentCitizen, hash } from '../../lib/auth';
+import { sendOtp } from '../../lib/otp';
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 async function reg(fd) {
   'use server';
-  const g = (k) => String(fd.get(k) || '').trim(), pw = String(fd.get('password') || ''), email = g('email').toLowerCase();
-  if (!g('name') || !/^01\d{9}$/.test(g('mobile')) || !EMAIL.test(email) || email.length > 120 || pw.length < 8) redirect('/register?error=1');
-  if (await getByMobile(g('mobile'))) redirect('/register?error=dup');
-  if (await getByEmail(email)) redirect('/register?error=dupmail');
-  const u = await addCitizen({ name: g('name'), mobile: g('mobile'), email, pass_hash: hash(pw) });
-  startSession(u);
-  redirect('/profile?mail=' + (await sendVerifyMail(u)));
+  const name = String(fd.get('name') || '').trim().slice(0, 100), email = String(fd.get('email') || '').trim().toLowerCase();
+  const pw = String(fd.get('password') || ''), c2 = String(fd.get('confirm') || '');
+  if (!name || !EMAIL.test(email) || email.length > 120) redirect('/register?error=1');
+  if (pw.length < 8) redirect('/register?error=short');
+  if (pw !== c2) redirect('/register?error=match');
+  if (await getByEmail(email)) redirect('/register?error=dup');
+  redirect(`/register/verify?email=${encodeURIComponent(email)}&r=${await sendOtp('signup', email, { name, pass_hash: hash(pw) })}`);
 }
 export default async function Register({ searchParams }) {
   if (await currentCitizen()) redirect('/dashboard');
   return (
     <div className="page" style={{ maxWidth: 520 }}>
       <h1>নাগরিক নিবন্ধন</h1>
-      <p className="sub">নিবন্ধনের পর আপনার ইমেইলে একটি যাচাইয়ের লিংক যাবে।</p>
-      {searchParams.error === '1' && <p className="badge bad">নাম, সঠিক ইমেইল, ১১ ডিজিটের মোবাইল নম্বর (01XXXXXXXXX) এবং কমপক্ষে ৮ অক্ষরের পাসওয়ার্ড দিন।</p>}
-      {searchParams.error === 'dup' && <p className="badge bad">এই মোবাইল নম্বরে আগেই নিবন্ধন করা আছে। <a href="/login">লগইন করুন</a>।</p>}
-      {searchParams.error === 'dupmail' && <p className="badge bad">এই ইমেইলে আগেই নিবন্ধন করা আছে। <a href="/login">লগইন করুন</a>।</p>}
+      <p className="sub">নাম, ইমেইল ও পাসওয়ার্ড দিন। ইমেইলে একটি ৬ ডিজিটের কোড যাবে, কোডটি দিলেই অ্যাকাউন্ট তৈরি হবে।</p>
+      {searchParams.error === '1' && <p className="badge bad">নাম ও সঠিক ইমেইল ঠিকানা দিন।</p>}
+      {searchParams.error === 'short' && <p className="badge bad">পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।</p>}
+      {searchParams.error === 'match' && <p className="badge bad">পাসওয়ার্ড দুটি মেলেনি।</p>}
+      {searchParams.error === 'dup' && <p className="badge bad">এই ইমেইলে আগেই অ্যাকাউন্ট আছে। <a href="/login">লগইন করুন</a>।</p>}
       <form className="card" action={reg}>
-        <label htmlFor="name">আপনার নাম</label><input id="name" name="name" required />
+        <label htmlFor="name">আপনার নাম</label><input id="name" name="name" autoComplete="name" required />
         <label htmlFor="email">ইমেইল ঠিকানা</label><input id="email" name="email" type="email" autoComplete="email" required />
-        <label htmlFor="mobile">মোবাইল নম্বর</label><input id="mobile" name="mobile" inputMode="numeric" placeholder="01XXXXXXXXX" required />
         <label htmlFor="password">পাসওয়ার্ড (কমপক্ষে ৮ অক্ষর)</label><input id="password" name="password" type="password" minLength={8} autoComplete="new-password" required />
-        <button className="btn" style={{ width: '100%' }}>নিবন্ধন করুন</button>
+        <label htmlFor="confirm">পাসওয়ার্ড আবার লিখুন</label><input id="confirm" name="confirm" type="password" minLength={8} autoComplete="new-password" required />
+        <button className="btn" style={{ width: '100%' }}>কোড পাঠান</button>
       </form>
       <p className="sub" style={{ marginTop: 16 }}>আগে নিবন্ধন করেছেন? <a href="/login">লগইন করুন</a></p>
     </div>

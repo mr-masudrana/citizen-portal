@@ -108,3 +108,12 @@ html.js .page>p.badge[data-t]{display:none}
 .sk{background:linear-gradient(90deg,#E6ECE8 25%,#F3F6F4 37%,#E6ECE8 63%);background-size:400% 100%;border-radius:8px}.page .sk{animation:shimmer 1.4s linear infinite}@keyframes shimmer{from{background-position:100% 0}to{background-position:0 0}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 @media print{.toasts{display:none!important}}
+.sec-h{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}.sec-h h2{display:flex;align-items:center;gap:10px;font-size:20px;margin:0}
+.ic.sm{width:34px;height:34px;border-radius:10px}.miss{color:var(--mut);font-style:normal;font-weight:400}.kv b{text-align:right}.chk a{color:var(--g);font-weight:600}
+.pf-sec{scroll-margin-top:84px}
+.dash-pro{display:flex;flex-wrap:wrap;gap:20px;align-items:center;padding:22px;margin-bottom:16px}
+.dp-av{width:92px;height:92px;border-radius:50%;object-fit:cover;flex:none;margin:0;font-size:38px}
+.dp-info{flex:1 1 260px;min-width:0}.dp-name{font-size:24px;font-weight:700;line-height:1.3;margin-bottom:6px}
+.dp-line{display:flex;flex-wrap:wrap;align-items:center;gap:8px;color:var(--mut);margin-top:4px;word-break:break-all}.dp-line svg{color:var(--g);flex:none}
+@media(max-width:560px){.dp-act,.dp-act .btn{width:100%}}
+.otp{font-size:28px;letter-spacing:.45em;text-align:center;font-weight:600}

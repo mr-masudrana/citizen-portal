@@ -18,9 +18,9 @@ async function submit(fd) {
   if (badFile(files)) redirect('/warish?error=file');
   const no = 'S' + randomBytes(4).toString('hex').toUpperCase();
   const paths = await uploadDocs(no, files);
-  await add({ no, service, citizen_id: u.id, name: u.name, father: u.father, mother: u.mother, dob: u.dob, nid: u.nid, mobile: u.mobile, village: u.village, ward: u.ward, post: u.post, division: u.division, district: u.district, upazila: u.upazila, union_name: u.union_name, status: 'pending', createdAt: new Date().toISOString(), files: paths,
+  await add({ no, service, citizen_id: u.id, name: u.name, father: u.father, mother: u.mother, name_bn: u.name_bn, father_bn: u.father_bn, mother_bn: u.mother_bn, father_nid: u.father_nid, mother_nid: u.mother_nid, holding: u.holding, post_code: u.post_code, dob: u.dob, nid: u.nid, mobile: u.mobile, village: u.village, ward: u.ward, post: u.post, division: u.division, district: u.district, upazila: u.upazila, union_name: u.union_name, status: 'pending', createdAt: new Date().toISOString(), files: paths,
     extra: { dname: g('dname'), dfather: g('dfather'), ddeath: g('ddeath'), dcert: g('dcert'), daddr: g('daddr'), heirs } });
-  redirect(`/track?no=${no}&mobile=${u.mobile}`);
+  redirect(`/track?no=${no}`);
 }
 
 const Field = ({ l, n, ph, req = true, type = 'text' }) => (
