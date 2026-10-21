@@ -1,7 +1,7 @@
 'use client';
 import { usePathname } from 'next/navigation';
 import { Icon } from '../../lib/icons';
-const L = [['/admin', 'grid', 'ড্যাশবোর্ড'], ['/admin/applications', 'file', 'আবেদনসমূহ'], ['/admin/citizens', 'users', 'নাগরিক'], ['/admin/settings', 'settings', 'সেটিংস']];
+const L = [['/admin', 'grid', 'ড্যাশবোর্ড'], ['/admin/applications', 'file', 'আবেদনসমূহ'], ['/admin/citizens', 'users', 'নাগরিক'], ['/admin/entrepreneurs', 'briefcase', 'উদ্যোক্তা'], ['/admin/settings', 'settings', 'সেটিংস']];
 export default function AdminNav() {
   const p = usePathname();
   return (

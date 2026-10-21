@@ -7,7 +7,7 @@ export default async function Track({ searchParams }) {
   const no = String(searchParams.no || '').trim().toUpperCase();
   const r = no ? await get(no) : null;
   const me = r ? await currentCitizen() : null;
-  const own = !!(me && r && me.id === r.citizen_id);
+  const own = !!(me && r && (me.id === r.citizen_id || me.id === r.filed_by));
   return (
     <div className="page">
       <h1>আবেদনের অবস্থা</h1>

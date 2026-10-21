@@ -24,10 +24,11 @@ async function bulk(fd) {
 export default async function Apps({ searchParams: sp }) {
   if (!isAdmin()) redirect('/admin');
   const status = ST[sp.status] ? sp.status : '', service = SERVICES.includes(sp.service) ? sp.service : '', q = String(sp.q || '').slice(0, 60);
+  const filer = /^[0-9a-f-]{36}$/.test(sp.filer || '') ? sp.filer : '';
   const page = Math.max(1, Number(sp.page) || 1), size = 20;
-  const { rows, total } = await listApps({ status, service, q, page, size });
+  const { rows, total } = await listApps({ status, service, q, filer, page, size });
   const pages = Math.max(1, Math.ceil(total / size));
-  const params = new URLSearchParams(Object.entries({ status, service, q }).filter(([, v]) => v));
+  const params = new URLSearchParams(Object.entries({ status, service, q, filer }).filter(([, v]) => v));
   const link = (p) => { const x = new URLSearchParams(params); if (p > 1) x.set('page', p); const s = x.toString(); return `/admin/applications${s ? '?' + s : ''}`; };
   return (
     <>
@@ -51,7 +52,7 @@ export default async function Apps({ searchParams: sp }) {
             <tr key={a.no}>
               <td>{a.status === 'pending' && <input type="checkbox" name="no" value={a.no} aria-label={`${a.no} নির্বাচন`} />}</td>
               <td><a href={`/admin/applications/${a.no}`}>{a.no}</a></td><td>{a.service}</td>
-              <td><b>{a.name_bn || a.name}</b><br /><small>{a.nid ? `NID: ${bn(a.nid)}` : ''}{a.mobile ? ` · ${bn(a.mobile)}` : ''}</small></td>
+              <td><b>{a.name_bn || a.name}</b>{a.filed_by && <span className="badge warn" style={{ marginLeft: 6, fontSize: 12, padding: '1px 8px' }}>উদ্যোক্তা</span>}<br /><small>{a.nid ? `NID: ${bn(a.nid)}` : ''}{a.mobile ? ` · ${bn(a.mobile)}` : ''}</small></td>
               <td><small>{[a.union_name, a.upazila, a.district].filter(Boolean).join(', ') || '—'}</small></td>
               <td><small>{dt(a.createdAt)}</small></td>
               <td><span className={`badge ${ST[a.status][1]}`}>{ST[a.status][0]}</span></td>

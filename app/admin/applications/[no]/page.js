@@ -28,7 +28,7 @@ export default async function AppDetail({ params, searchParams: sp }) {
   if (!isAdmin()) redirect('/admin');
   const a = await get(params.no);
   if (!a) notFound();
-  const [c, files] = await Promise.all([a.citizen_id ? getCitizen(a.citizen_id) : null, docUrls(a.files)]);
+  const [c, files, f, [pho]] = await Promise.all([a.citizen_id ? getCitizen(a.citizen_id) : null, docUrls(a.files), a.filed_by ? getCitizen(a.filed_by) : null, a.photo ? docUrls([a.photo]) : [null]]);
   const x = a.extra, st = ST[a.status];
   const addr = [a.holding && `বাসা/হোল্ডিং ${a.holding}`, a.village, a.ward && `ওয়ার্ড ${a.ward}`, a.post && `${a.post}${a.post_code ? '-' + a.post_code : ''}`, a.union_name, a.upazila, a.district, a.division].filter(Boolean).join(', ');
   return (
@@ -45,6 +45,9 @@ export default async function AppDetail({ params, searchParams: sp }) {
             <Row l="মাতার নাম" v={[a.mother_bn, a.mother].filter(Boolean).join(' / ')} /><Row l="মাতার NID" v={a.mother_nid && bn(a.mother_nid)} />
             <Row l="জন্ম তারিখ" v={a.dob && bn(a.dob.split('-').reverse().join('/'))} /><Row l="NID / জন্ম নিবন্ধন" v={a.nid && bn(a.nid)} />
             <Row l="মোবাইল" v={a.mobile && bn(a.mobile)} /><Row l="ইমেইল" v={c?.email} /><Row l="স্থায়ী ঠিকানা" v={addr} />
+            {f && <Row l="দাখিলকারী উদ্যোক্তা" v={<a href={`/admin/entrepreneurs/${f.id}`}>{f.name_bn || f.name} ({f.ent_data?.center || f.email})</a>} />}
+            {a.consent_at && <Row l="আবেদনকারীর সম্মতি" v={`নেওয়া হয়েছে (${dt(a.consent_at)})`} />}
+            {pho?.url && <div style={{ marginTop: 12 }}><img src={pho.url} alt="আবেদনকারীর ছবি" width="110" height="138" style={{ objectFit: 'cover', borderRadius: 10, border: '1px solid var(--bd)' }} /></div>}
             {c && <p style={{ margin: '14px 0 0' }}><a className="btn out sm" href={`/admin/citizens/${c.id}`}><Icon n="user" size={15} /> নাগরিকের প্রোফাইল</a></p>}
           </section>
           {x && !x.heirs && (

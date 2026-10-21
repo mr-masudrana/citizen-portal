@@ -32,6 +32,13 @@ export default async function Dashboard() {
           ? <a className="btn" href="/#services">সেবার আবেদন করুন</a>
           : <><p className="sub" style={{ margin: '10px 0 0' }}>সেবার আবেদন করতে প্রোফাইল ১০০% সম্পূর্ণ করুন এবং ইমেইল যাচাই করুন।</p><a className="btn" href="/profile">প্রোফাইল সম্পূর্ণ করুন</a></>}
       </div>
+      <div className="card" style={{ margin: '0 0 20px' }}>
+        <div className="sec-h" style={{ marginBottom: 6 }}>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 20, margin: 0 }}><span className="ic sm"><Icon n="briefcase" size={18} /></span>উদ্যোক্তা অ্যাকাউন্ট</h2>
+          {u.ent_status === 'approved' ? <a className="btn sm" style={{ margin: 0 }} href="/ent">উদ্যোক্তা প্যানেল</a> : u.ent_status === 'pending' ? <span className="badge warn">আবেদন বিবেচনাধীন</span> : u.ent_status === 'revoked' ? <span className="badge bad">অনুমতি প্রত্যাহার</span> : <a className="btn out sm" style={{ margin: 0 }} href="/ent/join">{u.ent_status === 'rejected' ? 'আবার আবেদন করুন' : 'উদ্যোক্তা হতে আবেদন'}</a>}
+        </div>
+        <p className="sub" style={{ margin: 0, fontSize: 15 }}>{u.ent_status === 'approved' ? 'আপনি অন্যের হয়ে সনদের আবেদন করতে পারেন।' : 'উদ্যোক্তা অন্যের নাম ঠিকানা দিয়ে তাঁদের হয়ে সনদের আবেদন করতে পারেন। অ্যাডমিনের অনুমতি লাগে।'}</p>
+      </div>
       <h2 style={{ fontSize: 22 }}>আমার আবেদনসমূহ</h2>
       {apps.length === 0 ? <p className="sub">এখনো কোনো আবেদন করেননি।</p> : (
         <div className="tbl"><table><thead><tr><th>নম্বর</th><th>সনদ</th><th>অবস্থা</th><th>কাজ</th></tr></thead>

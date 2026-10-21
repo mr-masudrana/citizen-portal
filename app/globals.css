@@ -149,3 +149,4 @@ body:has(.adm-shell)>.hdr,body:has(.adm-shell)>.ftr{display:none}
 .adm-files{display:flex;flex-wrap:wrap;gap:12px}.adm-files a{display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;color:var(--mut)}.adm-files img{width:130px;height:100px;object-fit:cover;border-radius:10px;border:1px solid var(--bd)}
 .adm-main .tbl table{min-width:720px}.adm-main td small{color:var(--mut)}
 @media(max-width:900px){.adm-shell{grid-template-columns:1fr}.adm-side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:10px 12px}.adm-brand{margin:0}.adm-nav{flex-direction:row;overflow-x:auto}.adm-nav a{white-space:nowrap}.adm-foot{margin:0;flex-direction:row;border:0;padding:0}.adm-foot a,.adm-foot button{width:auto}.adm-main{padding:18px 14px 50px}.adm-grid{grid-template-columns:1fr}}
+.req{color:var(--red)}
