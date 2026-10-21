@@ -7,6 +7,7 @@ import { fromIds, toIds } from '../../lib/geo';
 import { Icon } from '../../lib/icons';
 import PhotoPick from './PhotoPick';
 import AddressPicker from './AddressPicker';
+import { AccountBadge } from '../../lib/badge';
 
 const g = (fd, k) => String(fd.get(k) || '').trim().slice(0, 120);
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -132,6 +133,7 @@ export default async function Profile({ searchParams }) {
         <aside className="card pf-aside">
           {ph?.url ? <img className="pf-av" src={ph.url} alt="আপনার ছবি" /> : <div className="pf-ini" aria-hidden="true">{[...(u.name_bn || u.name || '?')][0]}</div>}
           <div style={{ fontWeight: 700, fontSize: 19 }}>{u.name_bn || u.name}</div>
+          <div style={{ margin: '6px 0', display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}><AccountBadge u={u} center={false} /></div>
           <div className="sub" style={{ margin: 0, wordBreak: 'break-all' }}>{u.email}</div>
           <div style={{ margin: '14px 0 6px' }}><Ring pc={pc} /></div>
           {pc === 100 && u.email_verified

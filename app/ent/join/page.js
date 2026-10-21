@@ -29,7 +29,7 @@ export default async function Join({ searchParams: sp }) {
       {sp.error === '1' && <p className="badge bad">প্রতিষ্ঠানের নাম, ঠিকানা ও অন্তত একটি নথি দিন।</p>}
       {sp.error === 'file' && <p className="badge bad">ফাইল সর্বোচ্চ ৩টি, প্রতিটি ১ MB-এর মধ্যে এবং JPG, PNG বা PDF হতে হবে।</p>}
       {sp.error === 'terms' && <p className="badge bad">শর্তে সম্মতির ঘরে টিক দিন।</p>}
-      {st === 'approved' && <div className="card"><span className="badge ok">আপনি অনুমোদিত উদ্যোক্তা</span><br /><a className="btn" href="/ent"><Icon n="briefcase" size={18} /> উদ্যোক্তা প্যানেলে যান</a></div>}
+      {st === 'approved' && <div className="card"><span className="badge ok">আপনি অনুমোদিত উদ্যোক্তা</span><br /><a className="btn" href="/dashboard?tab=filed"><Icon n="grid" size={18} /> ড্যাশবোর্ডে যান</a></div>}
       {st === 'pending' && <div className="card"><span className="badge warn">আবেদন বিবেচনাধীন</span><p className="sub" style={{ margin: '10px 0 0' }}>অ্যাডমিন আপনার আবেদন যাচাই করছেন। সিদ্ধান্ত ইমেইলে জানানো হবে।</p></div>}
       {st === 'revoked' && <div className="card"><span className="badge bad">অনুমতি প্রত্যাহার করা হয়েছে</span>{u.ent_note && <p style={{ margin: '10px 0 0' }}><b>কারণ:</b> {u.ent_note}</p>}<p className="sub" style={{ margin: '10px 0 0' }}>বিস্তারিত জানতে ইউনিয়ন পরিষদের সঙ্গে যোগাযোগ করুন।</p></div>}
       {(!st || st === 'rejected') && (

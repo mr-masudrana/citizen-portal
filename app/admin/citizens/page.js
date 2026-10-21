@@ -3,6 +3,7 @@ import { isAdmin, dt } from '../../../lib/admin';
 import { listCitizens } from '../../../lib/db';
 import { percent } from '../../../lib/auth';
 import { Icon } from '../../../lib/icons';
+import { AccountBadge } from '../../../lib/badge';
 import { bn } from '../../../lib/templates';
 export const dynamic = 'force-dynamic';
 export default async function Citizens({ searchParams: sp }) {
@@ -20,7 +21,7 @@ export default async function Citizens({ searchParams: sp }) {
           <thead><tr><th>নাম</th><th>ইমেইল</th><th>মোবাইল</th><th>প্রোফাইল</th><th>নিবন্ধন</th><th>অবস্থা</th><th></th></tr></thead>
           <tbody>{rows.map((c) => (
             <tr key={c.id}>
-              <td><b>{c.name_bn || c.name}</b></td>
+              <td><b>{c.name_bn || c.name}</b><br /><AccountBadge u={c} center={false} /></td>
               <td><small>{c.email}</small> <span className={`badge ${c.email_verified ? 'ok' : 'warn'}`}>{c.email_verified ? 'যাচাইকৃত' : 'যাচাই বাকি'}</span></td>
               <td>{c.mobile ? bn(c.mobile) : '—'}</td><td>{bn(percent(c))}%</td><td><small>{dt(c.created_at)}</small></td>
               <td>{c.blocked ? <span className="badge bad">ব্লকড</span> : <span className="badge ok">সক্রিয়</span>}</td>

@@ -38,7 +38,7 @@ async function submit(fd) {
   const [pp] = await uploadDocs(no + 'p', [photo]);
   const now = new Date().toISOString();
   await add({ no, service, filed_by: u.id, consent_at: now, ...r, status: 'pending', createdAt: now, files: paths, photo: pp, extra: Object.keys(extra).length ? extra : null });
-  redirect(`/ent?ok=1&no=${no}`);
+  redirect(`/dashboard?tab=filed&ok=1&no=${no}`);
 }
 const F = ({ l, n, ph, req, type = 'text', pattern, title }) => (
   <div><label htmlFor={n}>{l}{req && <span className="req"> *</span>}</label><input id={n} name={n} type={type} placeholder={ph} required={req} pattern={pattern} title={title} /></div>

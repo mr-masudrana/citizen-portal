@@ -4,6 +4,7 @@ import { isAdmin, dt } from '../../../../lib/admin';
 import { getCitizen, patchCitizen, byCitizen, docUrls } from '../../../../lib/db';
 import { percent, missing } from '../../../../lib/auth';
 import { Icon } from '../../../../lib/icons';
+import { AccountBadge } from '../../../../lib/badge';
 import { bn } from '../../../../lib/templates';
 export const dynamic = 'force-dynamic';
 const ST = { pending: ['অপেক্ষমাণ', 'warn'], approved: ['অনুমোদিত', 'ok'], rejected: ['বাতিল', 'bad'] };
@@ -29,7 +30,7 @@ export default async function CitizenDetail({ params, searchParams: sp }) {
       {sp.ok && <p className="badge ok">কাজটি সম্পন্ন হয়েছে।</p>}
       <div className="card dash-pro">
         {ph?.url ? <img className="dp-av" src={ph.url} alt="নাগরিকের ছবি" /> : <div className="pf-ini dp-av" aria-hidden="true">{[...(c.name_bn || c.name || '?')][0]}</div>}
-        <div className="dp-info"><div className="dp-name">{c.name_bn || c.name}</div>
+        <div className="dp-info"><div className="dp-name">{c.name_bn || c.name}</div><div style={{ margin: '0 0 6px', display: 'flex', flexWrap: 'wrap', gap: 6 }}><AccountBadge u={c} /></div>
           <div className="dp-line"><Icon n="mail" size={17} />{c.email}<span className={`badge ${c.email_verified ? 'ok' : 'warn'}`}>{c.email_verified ? 'যাচাইকৃত' : 'যাচাই বাকি'}</span></div>
           <div className="dp-line"><Icon n="phone" size={17} />{c.mobile ? bn(c.mobile) : 'মোবাইল নেই'}</div></div>
         <form action={toggle} className="dp-act"><input type="hidden" name="id" value={c.id} />

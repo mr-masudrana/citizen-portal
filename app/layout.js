@@ -21,7 +21,7 @@ export default async function RootLayout({ children }) {
             <a href="/verify"><Icon n="qr" size={17} />সনদ যাচাই</a>
             <a href="/track"><Icon n="search" size={17} />আবেদনের অবস্থা</a>
             {u ? (
-              <><a href="/dashboard"><Icon n="grid" size={17} />আমার অ্যাকাউন্ট</a>{u.ent_status === 'approved' && <a href="/ent"><Icon n="briefcase" size={17} />উদ্যোক্তা</a>}<form action={logout}><button className="btn out sm"><Icon n="logout" size={16} />লগআউট</button></form></>
+              <><a href="/dashboard"><Icon n="grid" size={17} />আমার অ্যাকাউন্ট</a><form action={logout}><button className="btn out sm"><Icon n="logout" size={16} />লগআউট</button></form></>
             ) : (
               <><a href="/login"><Icon n="login" size={17} />লগইন</a><a className="navcta" href="/register">নিবন্ধন</a></>
             )}
