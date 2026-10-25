@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { isAdmin, dt } from '../../../../lib/admin';
-import { getCitizen, patchCitizen, byCitizen, docUrls } from '../../../../lib/db';
+import { getCitizen, patchCitizen, byCitizen, docUrls, rpc, txByCitizen } from '../../../../lib/db';
 import { percent, missing } from '../../../../lib/auth';
 import { Icon } from '../../../../lib/icons';
 import { AccountBadge } from '../../../../lib/badge';
@@ -16,6 +16,16 @@ async function toggle(fd) {
   revalidatePath(`/admin/citizens/${id}`);
   redirect(`/admin/citizens/${id}?ok=1`);
 }
+async function adjust(fd) {
+  'use server';
+  if (!isAdmin()) return;
+  const id = String(fd.get('id')), amt = Number(fd.get('amount')), note = String(fd.get('note') || '').trim().slice(0, 150);
+  const back = `/admin/citizens/${id}`;
+  if (!/^[0-9a-f-]{36}$/.test(id) || !Number.isInteger(amt) || amt === 0 || Math.abs(amt) > 100000 || !note) redirect(`${back}?e=adj`);
+  if ((await rpc('wallet_apply', { p_citizen: id, p_amount: amt, p_type: 'adjust', p_ref: null, p_note: note })) === -1) redirect(`${back}?e=low`);
+  revalidatePath(back);
+  redirect(`${back}?ok=1`);
+}
 const Row = ({ l, v }) => <div className="kv"><span>{l}</span><b>{v || '—'}</b></div>;
 export default async function CitizenDetail({ params, searchParams: sp }) {
   if (!isAdmin()) redirect('/admin');
@@ -24,6 +34,7 @@ export default async function CitizenDetail({ params, searchParams: sp }) {
   if (!c) notFound();
   const [apps, [ph]] = await Promise.all([byCitizen(c.id), c.photo ? docUrls([c.photo]) : [null]]);
   const pc = percent(c), miss = missing(c);
+  const tx = await txByCitizen(c.id, 10);
   return (
     <>
       <p className="sub" style={{ margin: 0 }}><a href="/admin/citizens">← নাগরিক</a></p>
@@ -38,6 +49,18 @@ export default async function CitizenDetail({ params, searchParams: sp }) {
         </form>
       </div>
       {c.blocked && <p className="badge bad">এই অ্যাকাউন্টটি ব্লক করা আছে, নাগরিক লগইন করতে পারবেন না।</p>}
+      {sp.e === 'adj' && <p className="badge bad">সংখ্যা (পূর্ণ টাকা, ঋণাত্মক হলে কাটা) ও কারণ দিন।</p>}
+      {sp.e === 'low' && <p className="badge bad">ব্যালেন্সের চেয়ে বেশি কাটা যাবে না।</p>}
+      <section className="card adm-sec">
+        <div className="sec-h"><h2>ওয়ালেট: ৳{bn(c.balance || 0)}</h2></div>
+        <form action={adjust} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <input type="hidden" name="id" value={c.id} />
+          <input name="amount" type="number" step="1" placeholder="±টাকা (যেমন 100 বা -50)" aria-label="টাকা" required style={{ width: 190 }} />
+          <input name="note" placeholder="কারণ (বাধ্যতামূলক)" aria-label="কারণ" required style={{ flex: '1 1 200px', width: 'auto' }} />
+          <button className="btn sm" style={{ margin: 0 }}><Icon n="check" size={15} /> সমন্বয় করুন</button>
+        </form>
+        {tx.length > 0 && <div className="tbl" style={{ marginTop: 12 }}><table style={{ minWidth: 0 }}><tbody>{tx.map((t) => <tr key={t.id}><td><small>{dt(t.created_at)}</small></td><td>{t.type}</td><td><b>{t.amount > 0 ? '+' : '−'}৳{bn(Math.abs(t.amount))}</b></td><td><small>{[t.note, t.ref].filter(Boolean).join(' · ')}</small></td></tr>)}</tbody></table></div>}
+      </section>
       <div className="adm-grid">
         <section className="card adm-sec"><h2>প্রোফাইল ({bn(pc)}%)</h2>
           <Row l="নাম (বাংলা / ইংরেজি)" v={[c.name_bn, c.name].filter(Boolean).join(' / ')} />

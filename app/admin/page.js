@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createHash, timingSafeEqual } from 'crypto';
 import { isAdmin, startAdmin, adminConfigured, adminLocked, adminFail, adminOk, decide, dt } from '../../lib/admin';
-import { countEnt, countApps, countSince, countCitizens, appsSince, topServices, listApps, listCitizens } from '../../lib/db';
+import { countTopups, countEnt, countApps, countSince, countCitizens, appsSince, topServices, listApps, listCitizens } from '../../lib/db';
 import { Icon } from '../../lib/icons';
 import { bn } from '../../lib/templates';
 export const dynamic = 'force-dynamic';
@@ -45,12 +45,13 @@ export default async function Admin({ searchParams }) {
     appsSince(since.toISOString()), topServices(), listApps({ status: 'pending', asc: true, size: 8 }), listCitizens({ size: 6 }),
   ]);
   const entPending = await countEnt('pending');
+  const payPending = await countTopups('pending');
   const days = Array.from({ length: 14 }, (_, i) => { const d = new Date(since.getTime() + i * 864e5 + 6 * 36e5); return { k: d.toISOString().slice(0, 10), n: 0, l: bn(d.getUTCDate()) }; });
   recent.forEach((r) => { const k = new Date(new Date(r.created_at).getTime() + 6 * 36e5).toISOString().slice(0, 10); const d = days.find((x) => x.k === k); if (d) d.n++; });
   const max = Math.max(1, ...days.map((d) => d.n));
   const cnt = {}; svc.forEach((r) => (cnt[r.service] = (cnt[r.service] || 0) + 1));
   const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 8), topMax = top[0]?.[1] || 1;
-  const cards = [['মোট আবেদন', total, 'file', ''], ['অপেক্ষমাণ', pending, 'clock', 'warn'], ['অনুমোদিত', approved, 'check', 'ok'], ['বাতিল', rejected, 'x', 'bad'], ['আজকের আবেদন', today, 'chart', ''], ['মোট নাগরিক', cit, 'users', ''], ['ইমেইল যাচাইকৃত', vcit, 'mail', ''], ['উদ্যোক্তা আবেদন', entPending, 'briefcase', 'warn']];
+  const cards = [['মোট আবেদন', total, 'file', ''], ['অপেক্ষমাণ', pending, 'clock', 'warn'], ['অনুমোদিত', approved, 'check', 'ok'], ['বাতিল', rejected, 'x', 'bad'], ['আজকের আবেদন', today, 'chart', ''], ['মোট নাগরিক', cit, 'users', ''], ['ইমেইল যাচাইকৃত', vcit, 'mail', ''], ['উদ্যোক্তা আবেদন', entPending, 'briefcase', 'warn'], ['পেমেন্ট অনুরোধ', payPending, 'coins', 'warn']];
   const pc = (n) => (total ? (n / total) * 100 : 0);
   return (
     <>

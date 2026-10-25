@@ -1,25 +1,25 @@
 import { redirect } from 'next/navigation';
-import { requireCitizen, ready } from '../../../lib/auth';
-import { patchCitizen, uploadDocs, badFile } from '../../../lib/db';
-import { Icon } from '../../../lib/icons';
+import { requireCitizen, ready } from '../../lib/auth';
+import { patchCitizen, uploadDocs, badFile } from '../../lib/db';
+import { Icon } from '../../lib/icons';
 export const dynamic = 'force-dynamic';
 async function join(fd) {
   'use server';
-  const u = await requireCitizen('/ent/join');
+  const u = await requireCitizen('/entrepreneur');
   if (!ready(u)) redirect('/profile?need=1');
-  if (['pending', 'approved', 'revoked'].includes(u.ent_status)) redirect('/ent/join');
+  if (['pending', 'approved', 'revoked'].includes(u.ent_status)) redirect('/entrepreneur');
   const g = (k, n = 120) => String(fd.get(k) || '').trim().slice(0, n);
   const center = g('center'), address = g('address', 200), license = g('license'), reason = g('reason', 500);
   const files = fd.getAll('docs').filter((f) => f.size > 0);
-  if (!center || !address || !files.length) redirect('/ent/join?error=1');
-  if (badFile(files)) redirect('/ent/join?error=file');
-  if (!fd.get('terms')) redirect('/ent/join?error=terms');
+  if (!center || !address || !files.length) redirect('/entrepreneur?error=1');
+  if (badFile(files)) redirect('/entrepreneur?error=file');
+  if (!fd.get('terms')) redirect('/entrepreneur?error=terms');
   const paths = await uploadDocs(`ent_${u.id}_${Date.now()}`, files);
   await patchCitizen(u.id, { ent_status: 'pending', ent_data: { center, address, license, reason, files: paths }, ent_note: null, ent_at: new Date().toISOString() });
-  redirect('/ent/join?sent=1');
+  redirect('/entrepreneur?sent=1');
 }
 export default async function Join({ searchParams: sp }) {
-  const u = await requireCitizen('/ent/join');
+  const u = await requireCitizen('/entrepreneur');
   const st = u.ent_status;
   return (
     <div className="page" style={{ maxWidth: 720 }}>

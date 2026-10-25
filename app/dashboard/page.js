@@ -29,6 +29,12 @@ export default async function Dashboard({ searchParams: sp }) {
         </div>
         <div className="dp-act"><a className="btn" href="/profile" style={{ margin: 0 }}><Icon n="user" size={18} /> প্রোফাইল দেখুন</a></div>
       </div>
+      <div className="card wallet-card" style={{ margin: '0 0 20px' }}>
+        <div className="sec-h" style={{ marginBottom: 0 }}>
+          <div><div className="sub" style={{ margin: 0 }}>ওয়ালেট ব্যালেন্স</div><div className="wal-amt">৳{bn(u.balance || 0)}</div></div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><a className="btn sm" style={{ margin: 0 }} href="/wallet/topup"><Icon n="coins" size={16} /> ব্যালেন্স যোগ</a><a className="btn out sm" style={{ margin: 0 }} href="/wallet">লেনদেন</a></div>
+        </div>
+      </div>
       <div className="card" style={{ margin: '0 0 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}><span>প্রোফাইল সম্পূর্ণতা</span><span>{bn(pc)}%</span></div>
         <div className="bar" role="progressbar" aria-valuenow={pc} aria-valuemin="0" aria-valuemax="100"><i style={{ width: `${pc}%` }} /></div>
@@ -40,14 +46,14 @@ export default async function Dashboard({ searchParams: sp }) {
         <div className="card" style={{ margin: '0 0 20px' }}>
           <div className="sec-h" style={{ marginBottom: 6 }}>
             <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 20, margin: 0 }}><span className="ic sm"><Icon n="briefcase" size={18} /></span>উদ্যোক্তা অ্যাকাউন্ট</h2>
-            {u.ent_status === 'pending' ? <span className="badge warn">আবেদন বিবেচনাধীন</span> : u.ent_status === 'revoked' ? <span className="badge bad">অনুমতি প্রত্যাহার</span> : <a className="btn out sm" style={{ margin: 0 }} href="/ent/join">{u.ent_status === 'rejected' ? 'আবার আবেদন করুন' : 'উদ্যোক্তা হতে আবেদন'}</a>}
+            {u.ent_status === 'pending' ? <span className="badge warn">আবেদন বিবেচনাধীন</span> : u.ent_status === 'revoked' ? <span className="badge bad">অনুমতি প্রত্যাহার</span> : <a className="btn out sm" style={{ margin: 0 }} href="/entrepreneur">{u.ent_status === 'rejected' ? 'আবার আবেদন করুন' : 'উদ্যোক্তা হতে আবেদন'}</a>}
           </div>
           <p className="sub" style={{ margin: 0, fontSize: 15 }}>উদ্যোক্তা অন্যের নাম ঠিকানা দিয়ে তাঁদের হয়ে সনদের আবেদন করতে পারেন। অ্যাডমিনের অনুমতি লাগে।</p>
         </div>
       )}
       {isEnt && (
         <>
-          <a className="btn" href="/ent/apply" style={{ margin: '0 0 6px' }}><Icon n="file" size={18} /> অন্যের জন্য নতুন আবেদন</a>
+          <a className="btn" href="/apply/other" style={{ margin: '0 0 6px' }}><Icon n="file" size={18} /> অন্যের জন্য নতুন আবেদন</a>
           <div className="tabs" role="tablist">
             <a role="tab" aria-selected={tab === 'own'} className={tab === 'own' ? 'on' : ''} href="/dashboard">আমার নিজের আবেদন ({bn(own.length)})</a>
             <a role="tab" aria-selected={tab === 'filed'} className={tab === 'filed' ? 'on' : ''} href="/dashboard?tab=filed">অন্যের জন্য দাখিল ({bn(filed.length)})</a>
@@ -65,7 +71,7 @@ export default async function Dashboard({ searchParams: sp }) {
           <tbody>{apps.map((a) => (
             <tr key={a.no}><td>{a.no}</td><td>{a.service}</td>{tab === 'filed' && <td>{a.name_bn || a.name}</td>}
               <td><span className={`badge ${L[a.status][1]}`}>{L[a.status][0]}</span>{a.status === 'rejected' && a.admin_note && <><br /><small>কারণ: {a.admin_note}</small></>}</td>
-              <td>{a.status === 'approved' ? <a href={`/certificate/${a.no}`}>সনদ দেখুন ও প্রিন্ট</a> : <a href={`/track?no=${a.no}`}>অবস্থা</a>}</td></tr>
+              <td>{a.status === 'approved' ? <a href={`/certificate/${a.no}`}>সনদ দেখুন ও প্রিন্ট</a> : <span className="sub" style={{ margin: 0 }}>—</span>}</td></tr>
           ))}</tbody></table></div>
       )}
     </div>

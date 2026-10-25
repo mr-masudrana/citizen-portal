@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import QRCode from 'qrcode';
 import bwipjs from 'bwip-js';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { get, getSettings } from '../../../lib/db';
 import { bn, bodyFor, familyIntro } from '../../../lib/templates';
 import PrintButton from './PrintButton';
@@ -19,8 +19,9 @@ const Tbl = ({ rows }) => (
 );
 export default async function Certificate({ params, searchParams }) {
   const r = await get(params.no);
-  const me = r ? await currentCitizen() : null;
-  if (!r || r.status !== 'approved' || (!isAdmin() && (!me || (me.id !== r.citizen_id && me.id !== r.filed_by)))) notFound();
+  const me = await currentCitizen(), adm = isAdmin();
+  if (!me && !adm) redirect('/login?next=' + encodeURIComponent(`/certificate/${params.no}`)); // সনদ দেখতে ও প্রিন্ট করতে লগইন লাগে
+  if (!r || r.status !== 'approved' || (!adm && me.id !== r.citizen_id && me.id !== r.filed_by)) notFound();
   const site = process.env.SITE_URL || 'http://localhost:3000', e = process.env, x = r.extra, st = await getSettings();
   const qr = await QRCode.toDataURL(`${site}/verify?no=${r.no}`, { margin: 1, width: 240 });
   const bc = 'data:image/png;base64,' + (await bwipjs.toBuffer({ bcid: 'code128', text: r.no, scale: 3, height: 9, includetext: false })).toString('base64');

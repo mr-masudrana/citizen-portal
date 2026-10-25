@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { randomBytes } from 'crypto';
-import { add, uploadDocs, badFile } from '../../lib/db';
+import { add, delApp, uploadDocs, badFile } from '../../lib/db';
+import { feeFor, charge } from '../../lib/wallet';
+import FeeNote from '../FeeNote';
 import { requireCitizen, ready } from '../../lib/auth';
 import HeirList from './HeirList';
 import { HEIR } from '../../lib/services';
@@ -16,11 +18,14 @@ async function submit(fd) {
   const files = fd.getAll('docs').filter((f) => f.size > 0);
   if (!g('dname') || !heirs.length) redirect('/warish?error=1');
   if (badFile(files)) redirect('/warish?error=file');
+  const fee = await feeFor(service);
+  if ((u.balance || 0) < fee) redirect(`/warish?service=${encodeURIComponent(service)}&error=bal`);
   const no = 'S' + randomBytes(4).toString('hex').toUpperCase();
   const paths = await uploadDocs(no, files);
-  await add({ no, service, citizen_id: u.id, name: u.name, father: u.father, mother: u.mother, name_bn: u.name_bn, father_bn: u.father_bn, mother_bn: u.mother_bn, father_nid: u.father_nid, mother_nid: u.mother_nid, holding: u.holding, post_code: u.post_code, dob: u.dob, nid: u.nid, mobile: u.mobile, village: u.village, ward: u.ward, post: u.post, division: u.division, district: u.district, upazila: u.upazila, union_name: u.union_name, status: 'pending', createdAt: new Date().toISOString(), files: paths,
+  await add({ fee, no, service, citizen_id: u.id, name: u.name, father: u.father, mother: u.mother, name_bn: u.name_bn, father_bn: u.father_bn, mother_bn: u.mother_bn, father_nid: u.father_nid, mother_nid: u.mother_nid, holding: u.holding, post_code: u.post_code, dob: u.dob, nid: u.nid, mobile: u.mobile, village: u.village, ward: u.ward, post: u.post, division: u.division, district: u.district, upazila: u.upazila, union_name: u.union_name, status: 'pending', createdAt: new Date().toISOString(), files: paths,
     extra: { dname: g('dname'), dfather: g('dfather'), ddeath: g('ddeath'), dcert: g('dcert'), daddr: g('daddr'), heirs } });
-  redirect(`/track?no=${no}`);
+  if (fee && !(await charge(u.id, fee, no, service))) { await delApp(no); redirect(`/warish?service=${encodeURIComponent(service)}&error=bal`); }
+  redirect(`/dashboard?ok=1&no=${no}`);
 }
 
 const Field = ({ l, n, ph, req = true, type = 'text' }) => (
@@ -37,7 +42,9 @@ export default async function Warish({ searchParams }) {
       <h1>{service}ের আবেদন</h1>
       <p className="sub">আবেদনকারী: {u.name} ({u.mobile})। মৃত ব্যক্তির তথ্য ও সকল ওয়ারিশের বিবরণ দিন।</p>
       {searchParams.error === 'file' && <p className="badge bad">ফাইল সর্বোচ্চ ৩টি, প্রতিটি ১ MB-এর মধ্যে এবং JPG, PNG বা PDF হতে হবে।</p>}
+      {searchParams.error === 'bal' && <p className="badge bad">ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই। ব্যালেন্স যোগ করে আবার চেষ্টা করুন।</p>}
       {searchParams.error === '1' && <p className="badge bad">মৃত ব্যক্তির নাম এবং অন্তত একজন ওয়ারিশের নাম দিন।</p>}
+      <FeeNote service={service} balance={u.balance || 0} />
       <form className="card" action={submit}>
         <input type="hidden" name="service" value={service} />
         <H>মৃত ব্যক্তির তথ্য</H>

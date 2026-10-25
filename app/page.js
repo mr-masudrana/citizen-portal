@@ -1,6 +1,6 @@
 import { SERVICES, HEIR, ICON } from '../lib/services';
 import { Icon } from '../lib/icons';
-const FEAT = [['home', 'ঘরে বসে আবেদন', 'অফিসে না গিয়েই আবেদন জমা দিন'], ['qr', 'QR কোডে যাচাই', 'প্রতিটি সনদের সত্যতা মুহূর্তেই'], ['lock', 'তথ্য সুরক্ষিত', 'নথি গোপনে সংরক্ষিত থাকে'], ['clock', 'অবস্থা জানুন', 'আবেদনের অবস্থা অনলাইনে দেখুন']];
+const FEAT = [['home', 'ঘরে বসে আবেদন', 'অফিসে না গিয়েই আবেদন জমা দিন'], ['qr', 'QR কোডে যাচাই', 'প্রতিটি সনদের সত্যতা মুহূর্তেই'], ['lock', 'তথ্য সুরক্ষিত', 'নথি গোপনে সংরক্ষিত থাকে'], ['clock', 'অবস্থা জানুন', 'ড্যাশবোর্ডে আবেদনের অবস্থা দেখুন']];
 const STEPS = [['user', 'নিবন্ধন ও প্রোফাইল', 'ইমেইল দিয়ে নিবন্ধন করে প্রোফাইল ১০০% সম্পূর্ণ করুন।'], ['file', 'আবেদন জমা দিন', 'সেবা বেছে প্রয়োজনীয় তথ্য ও নথি দিন।'], ['shield', 'অনুমোদন', 'ইউনিয়ন পরিষদের কর্মকর্তা আবেদন যাচাই করে অনুমোদন দেন।'], ['qr', 'প্রিন্ট ও যাচাই', 'QR কোডসহ সনদ প্রিন্ট করুন, যে কেউ যাচাই করতে পারবে।']];
 export default function Home() {
   return (
@@ -23,7 +23,7 @@ export default function Home() {
       <section id="services" className="wrap sec">
         <h2>সনদ সেবা</h2><p className="sub">প্রয়োজনীয় সেবাটি বেছে নিয়ে আবেদন করুন</p>
         <div className="grid">{SERVICES.map((s, i) => (
-          <a key={s} className="svc" style={{ '--n': i }} href={HEIR.includes(s) ? `/warish?service=${encodeURIComponent(s)}` : `/apply?service=${encodeURIComponent(s)}`}>
+          <a key={s} className="svc" style={{ '--n': i }} href={`/apply?service=${encodeURIComponent(s)}`}>
             <span className="ic"><Icon n={ICON[s] || 'file'} /></span><span className="svc-t">{s}</span><Icon n="arrow" size={16} className="go" />
           </a>
         ))}</div>

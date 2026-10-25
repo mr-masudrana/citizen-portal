@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation';
 import { randomBytes } from 'crypto';
 import { requireEnt } from '../../../lib/ent';
-import { add, uploadDocs, badFile } from '../../../lib/db';
+import { add, delApp, uploadDocs, badFile } from '../../../lib/db';
+import { feeFor, charge } from '../../../lib/wallet';
+import FeeNote from '../../FeeNote';
 import { SERVICES, EXTRA, MEMBERS, HEIR, ICON } from '../../../lib/services';
 import { parseExtra } from '../../../lib/apply';
 import { fromIds } from '../../../lib/geo';
@@ -9,14 +11,14 @@ import { Icon } from '../../../lib/icons';
 import HeirList from '../../warish/HeirList';
 import AddressPicker from '../../profile/AddressPicker';
 const BN = /^[\u0980-\u09FF\s.\-]+$/, NID = /^\d{10,17}$/;
-const ERR = { 1: 'সব বাধ্যতামূলক (*) ঘর পূরণ করুন।', bn: 'বাংলা ঘরগুলো বাংলা অক্ষরে লিখুন।', nid: 'NID/জন্ম নিবন্ধন নম্বর ১০ থেকে ১৭ ডিজিটের সংখ্যা হতে হবে।', mobile: 'মোবাইল নম্বর ১১ ডিজিটের (01XXXXXXXXX) হতে হবে।', addr: 'পোস্ট কোড ৪ ডিজিটের সংখ্যা হতে হবে।', dob: 'জন্ম তারিখ সঠিক ও আজকের আগের হতে হবে।', consent: 'আবেদনকারীর সম্মতি নিয়েছেন, এই ঘরে টিক দিন।', x: 'সেবার অতিরিক্ত তথ্য সঠিকভাবে দিন।', photo: 'আবেদনকারীর JPG বা PNG ছবি দিন, ১ MB-এর মধ্যে।', file: 'অন্তত একটি নথি দিন। ফাইল সর্বোচ্চ ৩টি, প্রতিটি ১ MB-এর মধ্যে এবং JPG, PNG বা PDF হতে হবে।' };
+const ERR = { bal: 'ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই। ব্যালেন্স যোগ করে আবার চেষ্টা করুন।', 1: 'সব বাধ্যতামূলক (*) ঘর পূরণ করুন।', bn: 'বাংলা ঘরগুলো বাংলা অক্ষরে লিখুন।', nid: 'NID/জন্ম নিবন্ধন নম্বর ১০ থেকে ১৭ ডিজিটের সংখ্যা হতে হবে।', mobile: 'মোবাইল নম্বর ১১ ডিজিটের (01XXXXXXXXX) হতে হবে।', addr: 'পোস্ট কোড ৪ ডিজিটের সংখ্যা হতে হবে।', dob: 'জন্ম তারিখ সঠিক ও আজকের আগের হতে হবে।', consent: 'আবেদনকারীর সম্মতি নিয়েছেন, এই ঘরে টিক দিন।', x: 'সেবার অতিরিক্ত তথ্য সঠিকভাবে দিন।', photo: 'আবেদনকারীর JPG বা PNG ছবি দিন, ১ MB-এর মধ্যে।', file: 'অন্তত একটি নথি দিন। ফাইল সর্বোচ্চ ৩টি, প্রতিটি ১ MB-এর মধ্যে এবং JPG, PNG বা PDF হতে হবে।' };
 async function submit(fd) {
   'use server';
-  const u = await requireEnt('/ent/apply');
+  const u = await requireEnt('/apply/other');
   const g = (k) => String(fd.get(k) || '').trim().slice(0, 120);
   const service = g('service');
-  if (!SERVICES.includes(service)) redirect('/ent/apply');
-  const back = (e) => redirect(`/ent/apply?service=${encodeURIComponent(service)}&error=${e}`);
+  if (!SERVICES.includes(service)) redirect('/apply/other');
+  const back = (e) => redirect(`/apply/other?service=${encodeURIComponent(service)}&error=${e}`);
   const loc = fromIds(g('division'), g('district'), g('upazila'), g('union'));
   if (g('union') === '__other') loc.union_name = g('union_other');
   const r = { name: g('name'), name_bn: g('name_bn'), father: g('father'), father_bn: g('father_bn'), father_nid: g('father_nid'), mother: g('mother'), mother_bn: g('mother_bn'), mother_nid: g('mother_nid'), dob: g('dob'), nid: g('nid'), mobile: g('mobile'), holding: g('holding'), village: g('village'), ward: g('ward'), post: g('post'), post_code: g('post_code'), ...loc };
@@ -33,11 +35,14 @@ async function submit(fd) {
   if (!photo || !photo.size || !['image/jpeg', 'image/png'].includes(photo.type) || photo.size > 1048576) back('photo');
   const files = fd.getAll('docs').filter((f) => f.size > 0);
   if (!files.length || badFile(files)) back('file');
+  const fee = await feeFor(service);
+  if ((u.balance || 0) < fee) back('bal');
   const no = 'S' + randomBytes(4).toString('hex').toUpperCase();
   const paths = await uploadDocs(no, files);
   const [pp] = await uploadDocs(no + 'p', [photo]);
   const now = new Date().toISOString();
-  await add({ no, service, filed_by: u.id, consent_at: now, ...r, status: 'pending', createdAt: now, files: paths, photo: pp, extra: Object.keys(extra).length ? extra : null });
+  await add({ fee, no, service, filed_by: u.id, consent_at: now, ...r, status: 'pending', createdAt: now, files: paths, photo: pp, extra: Object.keys(extra).length ? extra : null });
+  if (fee && !(await charge(u.id, fee, no, service))) { await delApp(no); back('bal'); }
   redirect(`/dashboard?tab=filed&ok=1&no=${no}`);
 }
 const F = ({ l, n, ph, req, type = 'text', pattern, title }) => (
@@ -47,18 +52,19 @@ const H = ({ children }) => <h2 style={{ margin: '28px 0 6px', fontSize: 20, pad
 const BNP = '[\\u0980-\\u09FF\\s.\\-]+';
 export default async function EntApply({ searchParams: sp }) {
   const service = sp.service;
-  const u = await requireEnt('/ent/apply' + (service ? `?service=${encodeURIComponent(service)}` : ''));
+  const u = await requireEnt('/apply/other' + (service ? `?service=${encodeURIComponent(service)}` : ''));
   if (!SERVICES.includes(service)) return (
     <div className="page"><h1>কোন সনদের জন্য আবেদন?</h1><p className="sub">সেবা বেছে নিন, তারপর আবেদনকারীর তথ্য দিন।</p>
-      <div className="grid">{SERVICES.map((s, i) => <a key={s} className="svc" style={{ '--n': i }} href={`/ent/apply?service=${encodeURIComponent(s)}`}><span className="ic"><Icon n={ICON[s] || 'file'} /></span><span className="svc-t">{s}</span><Icon n="arrow" size={16} className="go" /></a>)}</div>
+      <div className="grid">{SERVICES.map((s, i) => <a key={s} className="svc" style={{ '--n': i }} href={`/apply/other?service=${encodeURIComponent(s)}`}><span className="ic"><Icon n={ICON[s] || 'file'} /></span><span className="svc-t">{s}</span><Icon n="arrow" size={16} className="go" /></a>)}</div>
     </div>
   );
   const ex = EXTRA[service] || [];
   return (
     <div className="page" style={{ maxWidth: 900 }}>
       <h1>{service}</h1>
-      <p className="sub">আপনি আবেদনকারীর হয়ে তাঁর তথ্য দিচ্ছেন। তথ্য মিলিয়ে নিন, কারণ জমা দেওয়ার পর বদলানো যায় না। <a href="/ent/apply">অন্য সেবা বেছে নিন</a></p>
+      <p className="sub">আপনি আবেদনকারীর হয়ে তাঁর তথ্য দিচ্ছেন। তথ্য মিলিয়ে নিন, কারণ জমা দেওয়ার পর বদলানো যায় না। <a href="/apply/other">অন্য সেবা বেছে নিন</a></p>
       {ERR[sp.error] && <p className="badge bad">{ERR[sp.error]}</p>}
+      <FeeNote service={service} balance={u.balance || 0} />
       <form className="card" action={submit}>
         <input type="hidden" name="service" value={service} />
         <H>আবেদনকারীর তথ্য</H>
@@ -86,10 +92,11 @@ export default async function EntApply({ searchParams: sp }) {
             <p className="sub" style={{ margin: '14px 0 8px' }}>ওয়ারিশদের তালিকা</p><HeirList />
           </>
         )}
-        <H>ছবি ও নথি</H>
+        <H>আবেদনকারীর ছবি ও নথি</H>
+        <p className="sub" style={{ margin: '0 0 6px' }}>এগুলো আবেদনকারীর (যার জন্য আবেদন করছেন)। উদ্যোক্তা হিসেবে আপনার নিজের কোনো নথি লাগবে না।</p>
         <label htmlFor="photo">আবেদনকারীর ছবি <span className="req">*</span> (JPG বা PNG, ১ MB পর্যন্ত)</label>
         <input id="photo" name="photo" type="file" accept="image/jpeg,image/png" required />
-        <label htmlFor="docs">NID বা জন্ম নিবন্ধনের কপিসহ সহায়ক নথি <span className="req">*</span> (সর্বোচ্চ ৩টি, প্রতিটি ১ MB; JPG, PNG, PDF)</label>
+        <label htmlFor="docs">আবেদনকারীর NID বা জন্ম নিবন্ধনের কপিসহ সহায়ক নথি <span className="req">*</span> (সর্বোচ্চ ৩টি, প্রতিটি ১ MB; JPG, PNG, PDF)</label>
         <input id="docs" name="docs" type="file" multiple accept=".jpg,.jpeg,.png,.pdf" required />
         <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontWeight: 400, marginTop: 20 }}><input type="checkbox" name="consent" required style={{ width: 'auto', marginTop: 5 }} />
           <span>আমি আবেদনকারীর সম্মতি নিয়ে তাঁর তথ্য দিচ্ছি এবং দেওয়া সব তথ্য সঠিক।</span></label>
