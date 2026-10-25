@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createHash, timingSafeEqual } from 'crypto';
 import { isAdmin, startAdmin, adminConfigured, adminLocked, adminFail, adminOk, decide, dt } from '../../lib/admin';
-import { countTopups, countEnt, countApps, countSince, countCitizens, appsSince, topServices, listApps, listCitizens } from '../../lib/db';
+import { countTopups, countEnt, countApps, countSince, countCitizens, appsPerDay, topServices, listApps, listCitizens } from '../../lib/db';
 import { Icon } from '../../lib/icons';
 import { bn } from '../../lib/templates';
 export const dynamic = 'force-dynamic';
@@ -27,7 +27,7 @@ function Login({ e }) {
   return (
     <div className="page" style={{ maxWidth: 460 }}>
       <h1>অ্যাডমিন প্রবেশ</h1>
-      {!adminConfigured() && <p className="badge bad">.env ফাইলে ADMIN_KEY ও SESSION_SECRET সেট করুন।</p>}
+      {!adminConfigured() && <p className="badge bad">ADMIN_KEY (কমপক্ষে ২৪ অক্ষর) ও SESSION_SECRET (কমপক্ষে ৩২ অক্ষর, এলোমেলো) সেট করুন। উদাহরণের মান চলবে না।</p>}
       {e === 'bad' && <p className="badge bad">অ্যাডমিন কী ঠিক নেই।</p>}
       {e === 'locked' && <p className="badge bad">অনেকবার ভুল হয়েছে। ১৫ মিনিট পরে আবার চেষ্টা করুন।</p>}
       <form className="card" action={login}>
@@ -42,15 +42,14 @@ export default async function Admin({ searchParams }) {
   const start = dhaka(), since = new Date(start.getTime() - 13 * 864e5);
   const [total, pending, approved, rejected, today, cit, vcit, recent, svc, queue, newCit] = await Promise.all([
     countApps(), countApps('pending'), countApps('approved'), countApps('rejected'), countSince(start.toISOString()), countCitizens(), countCitizens(true),
-    appsSince(since.toISOString()), topServices(), listApps({ status: 'pending', asc: true, size: 8 }), listCitizens({ size: 6 }),
+    appsPerDay(since.toISOString()), topServices(8), listApps({ status: 'pending', asc: true, size: 8 }), listCitizens({ size: 6 }),
   ]);
   const entPending = await countEnt('pending');
   const payPending = await countTopups('pending');
   const days = Array.from({ length: 14 }, (_, i) => { const d = new Date(since.getTime() + i * 864e5 + 6 * 36e5); return { k: d.toISOString().slice(0, 10), n: 0, l: bn(d.getUTCDate()) }; });
-  recent.forEach((r) => { const k = new Date(new Date(r.created_at).getTime() + 6 * 36e5).toISOString().slice(0, 10); const d = days.find((x) => x.k === k); if (d) d.n++; });
+  recent.forEach((r) => { const d = days.find((x) => x.k === r.day); if (d) d.n = Number(r.n); });
   const max = Math.max(1, ...days.map((d) => d.n));
-  const cnt = {}; svc.forEach((r) => (cnt[r.service] = (cnt[r.service] || 0) + 1));
-  const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 8), topMax = top[0]?.[1] || 1;
+  const top = svc.map((r) => [r.service, Number(r.n)]), topMax = top[0]?.[1] || 1;
   const cards = [['মোট আবেদন', total, 'file', ''], ['অপেক্ষমাণ', pending, 'clock', 'warn'], ['অনুমোদিত', approved, 'check', 'ok'], ['বাতিল', rejected, 'x', 'bad'], ['আজকের আবেদন', today, 'chart', ''], ['মোট নাগরিক', cit, 'users', ''], ['ইমেইল যাচাইকৃত', vcit, 'mail', ''], ['উদ্যোক্তা আবেদন', entPending, 'briefcase', 'warn'], ['পেমেন্ট অনুরোধ', payPending, 'coins', 'warn']];
   const pc = (n) => (total ? (n / total) * 100 : 0);
   return (
@@ -84,7 +83,6 @@ export default async function Admin({ searchParams }) {
           <section className="card adm-sec">
             <h2>জনপ্রিয় সেবা</h2>
             {top.length === 0 ? <p className="sub">এখনো ডেটা নেই।</p> : top.map(([s, n]) => <div key={s} className="hbar"><span>{s}</span><div><i style={{ width: `${(n / topMax) * 100}%` }} /></div><b>{bn(n)}</b></div>)}
-            <p className="sub" style={{ margin: '8px 0 0', fontSize: 13 }}>সর্বশেষ ১০০০ আবেদনের ভিত্তিতে</p>
           </section>
           <section className="card adm-sec">
             <div className="sec-h"><h2>নতুন নাগরিক</h2><a className="btn out sm" href="/admin/citizens">সব দেখুন</a></div>

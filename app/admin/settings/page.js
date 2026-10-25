@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import QRCode from 'qrcode';
 import { isAdmin } from '../../../lib/admin';
-import { getSettings, saveSettings, uploadQr, docUrls } from '../../../lib/db';
+import { getSettings, saveSettings, uploadQr, docUrls, badPhoto } from '../../../lib/db';
+import { strong } from '../../../lib/secrets';
 import { SERVICES } from '../../../lib/services';
 import { validPayload } from '../../../lib/banglaqr';
 import { Icon } from '../../../lib/icons';
@@ -21,7 +22,7 @@ async function savePay(fd) {
   const p = { pay_name: String(fd.get('pay_name') || '').trim().slice(0, 100), pay_note: String(fd.get('pay_note') || '').trim().slice(0, 300), qr_payload: payload, qr_dynamic: !!fd.get('qr_dynamic') && validPayload(payload) };
   const f = fd.get('qr_image');
   if (f && f.size > 0) {
-    if (!['image/jpeg', 'image/png'].includes(f.type) || f.size > 1048576) redirect('/admin/settings?e=img');
+    if (await badPhoto(f)) redirect('/admin/settings?e=img');
     p.qr_image = await uploadQr(f);
   }
   await saveSettings(p);
@@ -42,7 +43,7 @@ async function saveFees(fd) {
 export default async function Settings({ searchParams: sp }) {
   if (!isAdmin()) redirect('/admin');
   const st = await getSettings(), e = process.env, fees = st.fees || {};
-  const sys = [['SMTP (ইমেইল পাঠানো)', !!e.SMTP_HOST], ['SITE_URL (ইমেইল ও QR লিংক)', !!e.SITE_URL], ['SESSION_SECRET', !!e.SESSION_SECRET], ['ADMIN_KEY', !!e.ADMIN_KEY], ['Supabase সংযোগ', !!e.SUPABASE_URL && !!e.SUPABASE_SERVICE_KEY]];
+  const sys = [['SMTP (ইমেইল পাঠানো)', !!e.SMTP_HOST], ['SITE_URL (ইমেইল ও QR লিংক)', !!e.SITE_URL], ['SESSION_SECRET (কমপক্ষে ৩২ অক্ষর)', strong(e.SESSION_SECRET)], ['ADMIN_KEY (কমপক্ষে ২৪ অক্ষর)', strong(e.ADMIN_KEY, 24)], ['Supabase সংযোগ', !!e.SUPABASE_URL && !!e.SUPABASE_SERVICE_KEY]];
   const emv = st.qr_payload ? validPayload(st.qr_payload) : false;
   const prev = st.qr_payload ? await QRCode.toDataURL(st.qr_payload, { margin: 1, width: 220 }) : st.qr_image ? (await docUrls([st.qr_image]))[0]?.url : '';
   return (

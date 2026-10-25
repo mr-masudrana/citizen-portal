@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import { randomBytes } from 'crypto';
 import { requireEnt } from '../../../lib/ent';
-import { add, delApp, uploadDocs, badFile } from '../../../lib/db';
-import { feeFor, charge } from '../../../lib/wallet';
+import { uploadDocs, badFile, badPhoto } from '../../../lib/db';
+import { feeFor, placeApplication } from '../../../lib/wallet';
 import FeeNote from '../../FeeNote';
 import { SERVICES, EXTRA, MEMBERS, HEIR, ICON } from '../../../lib/services';
 import { parseExtra } from '../../../lib/apply';
@@ -32,17 +32,17 @@ async function submit(fd) {
   const extra = parseExtra(fd, service);
   if (!extra) back('x');
   const photo = fd.get('photo');
-  if (!photo || !photo.size || !['image/jpeg', 'image/png'].includes(photo.type) || photo.size > 1048576) back('photo');
+  if (await badPhoto(photo)) back('photo');
   const files = fd.getAll('docs').filter((f) => f.size > 0);
-  if (!files.length || badFile(files)) back('file');
+  if (!files.length || (await badFile(files))) back('file');
   const fee = await feeFor(service);
   if ((u.balance || 0) < fee) back('bal');
   const no = 'S' + randomBytes(4).toString('hex').toUpperCase();
-  const paths = await uploadDocs(no, files);
-  const [pp] = await uploadDocs(no + 'p', [photo]);
   const now = new Date().toISOString();
-  await add({ fee, no, service, filed_by: u.id, consent_at: now, ...r, status: 'pending', createdAt: now, files: paths, photo: pp, extra: Object.keys(extra).length ? extra : null });
-  if (fee && !(await charge(u.id, fee, no, service))) { await delApp(no); back('bal'); }
+  const res = await placeApplication({ payer: u.id, fee, no, service,
+    upload: async (bag) => { const paths = await uploadDocs(no, files, bag); const [pp] = await uploadDocs(no + 'p', [photo], bag); return { files: paths, photo: pp }; },
+    row: { filed_by: u.id, consent_at: now, ...r, status: 'pending', createdAt: now, extra: Object.keys(extra).length ? extra : null } });
+  if (res === 'bal') back('bal');
   redirect(`/dashboard?tab=filed&ok=1&no=${no}`);
 }
 const F = ({ l, n, ph, req, type = 'text', pattern, title }) => (

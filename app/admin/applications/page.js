@@ -17,7 +17,7 @@ async function bulk(fd) {
   if (!nos.length) redirect(`${to}${sep}e=none`);
   if (s === 'rejected' && !note) redirect(`${to}${sep}e=note`);
   let n = 0;
-  for (const no of nos) if (await decide(no, s, note, true)) n++;
+  for (const no of nos) if ((await decide(no, s, note, true)) === true) n++;
   revalidatePath('/admin', 'layout');
   redirect(`${to}${sep}done=${n}`);
 }

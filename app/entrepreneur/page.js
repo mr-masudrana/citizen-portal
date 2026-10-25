@@ -12,7 +12,7 @@ async function join(fd) {
   const center = g('center'), address = g('address', 200), license = g('license'), reason = g('reason', 500);
   const files = fd.getAll('docs').filter((f) => f.size > 0);
   if (!center || !address || !files.length) redirect('/entrepreneur?error=1');
-  if (badFile(files)) redirect('/entrepreneur?error=file');
+  if (await badFile(files)) redirect('/entrepreneur?error=file');
   if (!fd.get('terms')) redirect('/entrepreneur?error=terms');
   const paths = await uploadDocs(`ent_${u.id}_${Date.now()}`, files);
   await patchCitizen(u.id, { ent_status: 'pending', ent_data: { center, address, license, reason, files: paths }, ent_note: null, ent_at: new Date().toISOString() });

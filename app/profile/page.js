@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { requireCitizen, percent, FIELDS, hash, verify, startSession } from '../../lib/auth';
-import { patchCitizen, uploadPhoto, docUrls, getByEmail } from '../../lib/db';
+import { patchCitizen, uploadPhoto, docUrls, getByEmail, badPhoto } from '../../lib/db';
 import { sendOtp, checkOtp } from '../../lib/otp';
 import { bn } from '../../lib/templates';
 import { fromIds, toIds } from '../../lib/geo';
@@ -37,7 +37,7 @@ async function savePhoto(fd) {
   'use server';
   const u = await requireCitizen('/profile');
   const f = fd.get('photo');
-  if (!f || !f.size || !['image/jpeg', 'image/png'].includes(f.type) || f.size > 1048576) redirect('/profile?edit=photo&error=photo');
+  if (await badPhoto(f)) redirect('/profile?edit=photo&error=photo');
   await patchCitizen(u.id, { photo: await uploadPhoto(u.id, f) });
   redirect('/profile?saved=photo');
 }

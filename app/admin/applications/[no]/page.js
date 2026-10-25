@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { isAdmin, decide, dt } from '../../../../lib/admin';
-import { get, patch, getCitizen, docUrls, rpc } from '../../../../lib/db';
+import { get, getCitizen, docUrls } from '../../../../lib/db';
 import { EXTRA } from '../../../../lib/services';
 import { Icon } from '../../../../lib/icons';
 import { bn } from '../../../../lib/templates';
@@ -11,14 +11,11 @@ async function act(fd) {
   'use server';
   if (!isAdmin()) return;
   const no = String(fd.get('no')), s = String(fd.get('s')), note = String(fd.get('note') || '').trim().slice(0, 300), back = `/admin/applications/${no}`;
-  if (s === 'reopen') {
-    const a = await get(no);
-    if (a?.refunded && (await rpc('app_recharge', { p_no: no })) === -1) redirect(`${back}?e=bal`); // ফেরত দেওয়া ফি আবার কাটা যায়নি
-    await patch(no, { status: 'pending', decided_at: null });
-  }
-  else if (s === 'approved' || s === 'rejected') {
+  if (s === 'reopen' || s === 'approved' || s === 'rejected') {
     if (s === 'rejected' && !note) redirect(`${back}?e=note`);
-    await decide(no, s, note);
+    // অবস্থা বদল ও ফি ফেরত/পুনরায় কাটা একসঙ্গে। ফেরত দেওয়া ফি আবার কাটার ব্যালেন্স না থাকলে কিছুই বদলায় না।
+    const r = await decide(no, s === 'reopen' ? 'pending' : s, note);
+    if (r === 'bal') redirect(`${back}?e=bal`);
   }
   revalidatePath('/admin', 'layout');
   redirect(`${back}?ok=1`);
@@ -41,7 +38,7 @@ export default async function AppDetail({ params, searchParams: sp }) {
       <div className="sec-h"><div><h1>{a.service}</h1><p className="sub" style={{ margin: 0 }}>আবেদন নম্বর: <b>{a.no}</b></p></div><span className={`badge ${st[1]}`} style={{ fontSize: 17, padding: '6px 18px' }}>{st[0]}</span></div>
       {sp.ok && <p className="badge ok">কাজটি সম্পন্ন হয়েছে।</p>}
       {sp.e === 'note' && <p className="badge bad">বাতিলের কারণ (মন্তব্য) লিখুন।</p>}
-      {sp.e === 'bal' && <p className="badge bad">ফি ফেরত দেওয়া হয়েছিল, কিন্তু এখন ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই। আবার অপেক্ষমাণ করা যায়নি।</p>}
+      {sp.e === 'bal' && <p className="badge bad">ফি ফেরত দেওয়া হয়েছিল, কিন্তু এখন ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই। তাই আবেদনের অবস্থা বদলানো যায়নি।</p>}
       <div className="adm-grid">
         <div>
           <section className="card adm-sec"><h2>আবেদনকারী</h2>
