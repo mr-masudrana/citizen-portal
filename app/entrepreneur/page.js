@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import AccountShell from '../AccountShell';
 import { requireCitizen, ready } from '../../lib/auth';
 import { patchCitizen, uploadDocs, badFile } from '../../lib/db';
 import { Icon } from '../../lib/icons';
@@ -22,7 +23,7 @@ export default async function Join({ searchParams: sp }) {
   const u = await requireCitizen('/entrepreneur');
   const st = u.ent_status;
   return (
-    <div className="page" style={{ maxWidth: 720 }}>
+    <AccountShell u={u} width={720}>
       <h1>উদ্যোক্তা অ্যাকাউন্ট</h1>
       <p className="sub">উদ্যোক্তা অন্যের নাম ঠিকানা দিয়ে তাঁদের হয়ে সনদের আবেদন করতে পারেন। অ্যাডমিন অনুমতি দিলে এই সুবিধা চালু হবে।</p>
       {sp.sent && <p className="badge ok">আবেদন জমা হয়েছে। অ্যাডমিনের সিদ্ধান্ত ইমেইলে জানানো হবে।</p>}
@@ -48,6 +49,6 @@ export default async function Join({ searchParams: sp }) {
           </form>
         </>
       )}
-    </div>
+    </AccountShell>
   );
 }

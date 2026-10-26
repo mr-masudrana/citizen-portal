@@ -8,6 +8,7 @@ import { Icon } from '../../lib/icons';
 import PhotoPick from './PhotoPick';
 import AddressPicker from './AddressPicker';
 import { AccountBadge } from '../../lib/badge';
+import AccountShell from '../AccountShell';
 
 const g = (fd, k) => String(fd.get(k) || '').trim().slice(0, 120);
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -120,7 +121,7 @@ export default async function Profile({ searchParams }) {
   const mail = MAIL[searchParams.mail];
   const dob = u.dob && bn(u.dob.split('-').reverse().join('/'));
   return (
-    <div className="page" style={{ maxWidth: 1100 }}>
+    <AccountShell u={u}>
       <h1>আমার প্রোফাইল</h1>
       <p className="sub">প্রতিটি অংশের পাশের "সম্পাদনা" বাটন চেপে সেই অংশটি বদলাতে পারবেন।</p>
       {searchParams.need && <p className="badge warn">সেবার আবেদন করতে আগে প্রোফাইল ১০০% সম্পূর্ণ করতে এবং ইমেইল যাচাই করতে হবে।</p>}
@@ -129,21 +130,7 @@ export default async function Profile({ searchParams }) {
       {searchParams.verified && <p className="badge ok">ইমেইল যাচাই সম্পন্ন হয়েছে।</p>}
       {mail && <p className={`badge ${mail[0]}`}>{mail[1]}</p>}
       {ERR[searchParams.error] && <p className="badge bad">{ERR[searchParams.error]}</p>}
-      <div className="pf">
-        <aside className="card pf-aside">
-          {ph?.url ? <img className="pf-av" src={ph.url} alt="আপনার ছবি" /> : <div className="pf-ini" aria-hidden="true">{[...(u.name_bn || u.name || '?')][0]}</div>}
-          <div style={{ fontWeight: 700, fontSize: 19 }}>{u.name_bn || u.name}</div>
-          <div style={{ margin: '6px 0', display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}><AccountBadge u={u} center={false} /></div>
-          <div className="sub" style={{ margin: 0, wordBreak: 'break-all' }}>{u.email}</div>
-          <div style={{ margin: '14px 0 6px' }}><Ring pc={pc} /></div>
-          {pc === 100 && u.email_verified
-            ? <><span className="badge ok">প্রোফাইল সম্পূর্ণ</span><br /><a className="btn" href="/#services">সেবার আবেদন করুন</a></>
-            : <span className="badge warn">সম্পূর্ণ করতে বাকি আছে</span>}
-          <ul className="chk">{FIELDS.map(([k, l]) => (
-            <li key={k}><span className={u[k] ? 'on' : 'off'} aria-hidden="true">{u[k] ? '✓' : '○'}</span>
-              <span>{!u[k] && SEC[k] ? <a href={`/profile?edit=${SEC[k]}#${SEC[k]}`}>{l}</a> : l}</span><span className="sr">{u[k] ? ' (পূরণ করা)' : ' (বাকি)'}</span></li>
-          ))}</ul>
-        </aside>
+      <div className="adm-grid">
         <div>
           <Sec id="photo" icon="camera" title="প্রোফাইল ছবি" editing={ed === 'photo'}>
             {ed === 'photo' ? (
@@ -234,7 +221,21 @@ export default async function Profile({ searchParams }) {
             )}
           </Sec>
         </div>
+        <aside className="card pf-aside">
+          {ph?.url ? <img className="pf-av" src={ph.url} alt="আপনার ছবি" /> : <div className="pf-ini" aria-hidden="true">{[...(u.name_bn || u.name || '?')][0]}</div>}
+          <div style={{ fontWeight: 700, fontSize: 19 }}>{u.name_bn || u.name}</div>
+          <div style={{ margin: '6px 0', display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}><AccountBadge u={u} center={false} /></div>
+          <div className="sub" style={{ margin: 0, wordBreak: 'break-all' }}>{u.email}</div>
+          <div style={{ margin: '14px 0 6px' }}><Ring pc={pc} /></div>
+          {pc === 100 && u.email_verified
+            ? <><span className="badge ok">প্রোফাইল সম্পূর্ণ</span><br /><a className="btn" href="/#services">সেবার আবেদন করুন</a></>
+            : <span className="badge warn">সম্পূর্ণ করতে বাকি আছে</span>}
+          <ul className="chk">{FIELDS.map(([k, l]) => (
+            <li key={k}><span className={u[k] ? 'on' : 'off'} aria-hidden="true">{u[k] ? '✓' : '○'}</span>
+              <span>{!u[k] && SEC[k] ? <a href={`/profile?edit=${SEC[k]}#${SEC[k]}`}>{l}</a> : l}</span><span className="sr">{u[k] ? ' (পূরণ করা)' : ' (বাকি)'}</span></li>
+          ))}</ul>
+        </aside>
       </div>
-    </div>
+    </AccountShell>
   );
 }

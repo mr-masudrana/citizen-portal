@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import AccountShell from '../../AccountShell';
 import QRCode from 'qrcode';
 import { requireCitizen } from '../../../lib/auth';
 import { getSettings, addTopup, listTopups, docUrls } from '../../../lib/db';
@@ -34,7 +35,7 @@ export default async function Topup({ searchParams: sp }) {
     } else { const [f] = await docUrls([st.qr_image]); qr = f?.url || ''; }
   }
   return (
-    <div className="page" style={{ maxWidth: 760 }}>
+    <AccountShell u={u} width={760}>
       <h1>ব্যালেন্স যোগ করুন</h1>
       <p className="sub">বাংলা QR দিয়ে পেমেন্ট করে TrxID জমা দিন। অ্যাডমিন যাচাই করলে ওয়ালেটে টাকা যোগ হবে।</p>
       {ERR[sp.error] && <p className="badge bad">{ERR[sp.error]}</p>}
@@ -68,6 +69,6 @@ export default async function Topup({ searchParams: sp }) {
           </form>
         </>
       )}
-    </div>
+    </AccountShell>
   );
 }
